@@ -1,1 +1,1 @@
-# game-.github.io
+# game-equals-pi.github.io
