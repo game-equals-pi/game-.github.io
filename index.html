@@ -1,10 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Badass Page</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container List, Bro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        h1 { text-align: center; }
+        table {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #333;
+            color: white;
+        }
+        tr:hover {
+            background: #f0f0f0;
+        }
+        caption { font-size: 1.2em; margin: 10px; }
+    </style>
 </head>
 <body>
-    <h1>Fuck yeah, this is live!</h1>
-    <p>Hosted on GitHub Pages, bro. Add your real content here.</p>
+    <h1>My Container Entries</h1>
+    <table>
+        <caption>Shipping Container List</caption>
+        <thead>
+            <tr>
+                <th>Booth</th>
+                <th>Rego</th>
+                <th>Shipping Line</th>
+                <th>ISO</th>
+                <th>Grade</th>
+                <th>Door Direction</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Add your real entries here, dummy ones for now -->
+            <tr>
+                <td>B001</td>
+                <td>ABC-123</td>
+                <td>Maersk</td>
+                <td>42G1</td>
+                <td>A</td>
+                <td>Right Swing</td>
+            </tr>
+            <tr>
+                <td>B002</td>
+                <td>XYZ-456</td>
+                <td>CMA CGM</td>
+                <td>22G1</td>
+                <td>B</td>
+                <td>Left Swing</td>
+            </tr>
+            <tr>
+                <td>B003</td>
+                <td>DEF-789</td>
+                <td>Evergreen</td>
+                <td>45G1</td>
+                <td>A</td>
+                <td>Both Ends</td>
+            </tr>
+            <!-- Keep adding rows like this -->
+        </tbody>
+    </table>
 </body>
 </html>
