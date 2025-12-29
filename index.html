@@ -54,10 +54,55 @@
         <div class="tab" data-tab="history">History</div>
     </div>
 
-    <div id="bookings" class="content active">
-        <h1>Bookings</h1>
-        <p>Nothing here yet, chief. Coming soon...</p>
-    </div>
+<div id="bookings" class="content active">
+    <h1>Bookings</h1>
+    
+    <form id="bookingForm">
+        <table style="width:100%; max-width:800px; margin:20px auto;">
+            <tr>
+                <td><label>Release Number</label></td>
+                <td><input type="text" id="release" required></td>
+            </tr>
+            <tr>
+                <td><label>Shipping Line</label></td>
+                <td><input type="text" id="shippingline" required></td>
+            </tr>
+            <tr>
+                <td><label>ISO</label></td>
+                <td><input type="text" id="iso" required placeholder="e.g. 42G1"></td>
+            </tr>
+            <tr>
+                <td><label>Grade</label></td>
+                <td><input type="text" id="grade" required placeholder="A/B/C"></td>
+            </tr>
+            <tr>
+                <td><label>Carrier</label></td>
+                <td><input type="text" id="carrier" required></td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align:center; padding-top:20px;">
+                    <button type="submit">Add Booking</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <h2 style="text-align:center; margin-top:40px;">Current Bookings</h2>
+    <table id="bookingsTable">
+        <thead>
+            <tr>
+                <th>Release Number</th>
+                <th>Shipping Line</th>
+                <th>ISO</th>
+                <th>Grade</th>
+                <th>Carrier</th>
+            </tr>
+        </thead>
+        <tbody id="bookingsBody">
+            <!-- Rows injected by JS -->
+        </tbody>
+    </table>
+</div>
 
     <div id="onsite" class="content">
         <h1>On Site Containers</h1>
@@ -120,6 +165,53 @@
             });
         });
     </script>
+<script>
+    // Bookings logic
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
 
+    function renderBookings() {
+        const tbody = document.getElementById('bookingsBody');
+        tbody.innerHTML = '';
+
+        // Sort by Carrier alphabetically
+        bookings.sort((a, b) => a.carrier.localeCompare(b.carrier));
+
+        bookings.forEach((booking, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${booking.release}</td>
+                <td>${booking.shippingline}</td>
+                <td>${booking.iso}</td>
+                <td>${booking.grade}</td>
+                <td>${booking.carrier}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const newBooking = {
+            release: document.getElementById('release').value.trim(),
+            shippingline: document.getElementById('shippingline').value.trim(),
+            iso: document.getElementById('iso').value.trim(),
+            grade: document.getElementById('grade').value.trim(),
+            carrier: document.getElementById('carrier').value.trim()
+        };
+
+        bookings.push(newBooking);
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+
+        // Clear form
+        e.target.reset();
+
+        renderBookings();
+    });
+
+    // Load on page open
+    renderBookings();
+</script>
+    
 </body>
 </html>
