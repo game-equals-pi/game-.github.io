@@ -355,69 +355,63 @@
 </div>
 
 <script>
-// Theme system
+/* ===============================
+   THEME SYSTEM (UNCHANGED)
+================================ */
 const savedTheme = localStorage.getItem('theme') || 'light';
+document.body.className = '';
 document.body.classList.add(savedTheme);
 
-document.getElementById('settingsBtn').addEventListener('click', (e) => {
+document.getElementById('settingsBtn').addEventListener('click', e => {
     e.stopPropagation();
     document.getElementById('settingsDropdown').classList.toggle('active');
 });
-
-document.addEventListener('click', () => {
-    document.getElementById('settingsDropdown').classList.remove('active');
-});
-
+document.addEventListener('click', () =>
+    document.getElementById('settingsDropdown').classList.remove('active')
+);
 document.querySelectorAll('.settings-item').forEach(item => {
     item.addEventListener('click', () => {
-        const theme = item.dataset.theme;
         document.body.className = '';
-        document.body.classList.add(theme);
-        localStorage.setItem('theme', theme);
+        document.body.classList.add(item.dataset.theme);
+        localStorage.setItem('theme', item.dataset.theme);
         document.getElementById('settingsDropdown').classList.remove('active');
     });
 });
 
-// REAL DYNAMIC DATE - FIXED
-const now = new Date();
+/* ===============================
+   DATE — ABSOLUTE AUTHORITY
+================================ */
+function getLocalDateParts() {
+    const d = new Date();
+    return {
+        dateObj: d,
+        dateInput: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+        dateKey: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
+        dateLabel: d.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })
+    };
+}
 
-// LOCAL ISO DATE (for <input type="date">)
-const today = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-).toISOString().split('T')[0];
+const TODAY = getLocalDateParts();
 
-// HUMAN READABLE DATE (label only)
-const todayFull = now.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-});
+document.getElementById('dateLabel').textContent = `Today: ${TODAY.dateLabel}`;
 
+const bookingsDateInput = document.getElementById('bookingsDate');
+const historyDateInput  = document.getElementById('historyDate');
 
-document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
+bookingsDateInput.valueAsDate = TODAY.dateInput;
+historyDateInput.valueAsDate  = TODAY.dateInput;
 
-let bookingsDate;
-let historyDate;
+let bookingsDate = TODAY.dateKey;
+let historyDate  = TODAY.dateKey;
 
-document.addEventListener('DOMContentLoaded', () => {
-    bookingsDate = today;
-    historyDate = today;
-
-    const b = document.getElementById('bookingsDate');
-    const h = document.getElementById('historyDate');
-
-    b.value = today;
-    h.value = today;
-
-    b.dispatchEvent(new Event('change'));
-    h.dispatchEvent(new Event('change'));
-});
-
-
-// Tab switching
+/* ===============================
+   TAB SYSTEM
+================================ */
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -425,209 +419,155 @@ document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.add('active');
         document.getElementById(tab.dataset.tab).classList.add('active');
 
-        if (tab.dataset.tab === 'bookings') {
-            bookingsDate = today;
-            document.getElementById('bookingsDate').value = today;
-            renderBookings();
-        } else if (tab.dataset.tab === 'history') {
-            historyDate = today;
-            document.getElementById('historyDate').value = today;
-            renderHistory();
-        } else if (tab.dataset.tab === 'onsite') {
-            renderOnsite();
-        }
+        if (tab.dataset.tab === 'bookings') renderBookings();
+        if (tab.dataset.tab === 'onsite') renderOnsite();
+        if (tab.dataset.tab === 'history') renderHistory();
     });
 });
 
-// Date picker changes
-document.getElementById('bookingsDate').addEventListener('change', (e) => {
+/* ===============================
+   DATE PICKER CHANGES
+================================ */
+bookingsDateInput.addEventListener('change', e => {
     bookingsDate = e.target.value;
     renderBookings();
 });
-
-document.getElementById('historyDate').addEventListener('change', (e) => {
+historyDateInput.addEventListener('change', e => {
     historyDate = e.target.value;
     renderHistory();
 });
 
-// Data and renders
+/* ===============================
+   STORAGE
+================================ */
 let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-let onsite = JSON.parse(localStorage.getItem('onsite') || '[]');
-let history = JSON.parse(localStorage.getItem('history') || '[]');
+let onsite   = JSON.parse(localStorage.getItem('onsite') || '[]');
+let history  = JSON.parse(localStorage.getItem('history') || '[]');
 let hideCompleted = false;
 
-// BOOKINGS
+/* ===============================
+   BOOKINGS
+================================ */
 function renderBookings() {
     const tbody = document.getElementById('bookingsBody');
     tbody.innerHTML = '';
+
     bookings
         .filter(b => b.date === bookingsDate)
-        .sort((a, b) => a.carrier.toUpperCase().localeCompare(b.carrier.toUpperCase()))
-        .forEach(booking => {
-            if (hideCompleted && booking.completed) return;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${booking.release}</td>
-                <td>${booking.shippingline}</td>
-                <td>${booking.iso}</td>
-                <td>${booking.grade}</td>
-                <td>${booking.carrier}</td>
-                <td style="text-align:center;">
-                    <input type="checkbox" ${booking.completed ? 'checked' : ''} disabled>
-                </td>
-            `;
-            tbody.appendChild(tr);
+        .sort((a,b)=>a.carrier.localeCompare(b.carrier))
+        .forEach(b => {
+            if (hideCompleted && b.completed) return;
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td>${b.release}</td>
+                    <td>${b.shippingline}</td>
+                    <td>${b.iso}</td>
+                    <td>${b.grade}</td>
+                    <td>${b.carrier}</td>
+                    <td style="text-align:center">
+                        <input type="checkbox" ${b.completed?'checked':''} disabled>
+                    </td>
+                </tr>
+            `);
         });
 }
 
-document.getElementById('toggleCompleted').addEventListener('click', (e) => {
+document.getElementById('toggleCompleted').onclick = e => {
     hideCompleted = !hideCompleted;
     e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
     e.target.style.background = hideCompleted ? '#dc3545' : '#555';
     renderBookings();
-});
+};
 
-document.getElementById('bookingForm').addEventListener('submit', (e) => {
+document.getElementById('bookingForm').onsubmit = e => {
     e.preventDefault();
-    const newBooking = {
+    bookings.push({
         date: bookingsDate,
-        release: document.getElementById('booking-release').value.trim().toUpperCase(),
-        shippingline: document.getElementById('booking-shippingline').value.trim().toUpperCase(),
-        iso: document.getElementById('booking-iso').value.trim().toUpperCase(),
-        grade: document.getElementById('booking-grade').value.trim().toUpperCase(),
-        carrier: document.getElementById('booking-carrier').value.trim().toUpperCase(),
+        release: booking-release.value.trim().toUpperCase(),
+        shippingline: booking-shippingline.value.trim().toUpperCase(),
+        iso: booking-iso.value.trim().toUpperCase(),
+        grade: booking-grade.value.trim().toUpperCase(),
+        carrier: booking-carrier.value.trim().toUpperCase(),
         completed: false
-    };
-    bookings.push(newBooking);
+    });
     localStorage.setItem('bookings', JSON.stringify(bookings));
     e.target.reset();
     renderBookings();
-});
+};
 
-// ON SITE
+/* ===============================
+   ON SITE
+================================ */
 function renderOnsite() {
-    const tbody = document.getElementById('onsiteBody');
+    const tbody = onsiteBody;
     tbody.innerHTML = '';
-    
-    const regoCount = {};
-    onsite.forEach(entry => regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1);
 
-    let currentRego = null;
-    let groupColor = 1;
-
-    onsite.forEach((entry, index) => {
-        if (entry.rego !== currentRego) {
-            currentRego = entry.rego;
-            if (regoCount[entry.rego] > 1) groupColor = 3 - groupColor;
-        }
-
-        const tr = document.createElement('tr');
-        if (regoCount[entry.rego] > 1) tr.classList.add(`truck-group${groupColor}`);
-
-        tr.innerHTML = `
-            <td>${entry.release}</td>
-            <td>${entry.shippingline}</td>
-            <td>${entry.iso}</td>
-            <td>${entry.grade}</td>
-            <td>${entry.carrier}</td>
-            <td>${entry.rego}</td>
-            <td>${entry.doorDirection}</td>
-            <td><input type="text" value="${entry.containerNumber || ''}" data-index="${index}" class="containerInput" style="width:100%;padding:5px;"></td>
-            <td><button class="completeBtn" data-index="${index}" style="background:${entry.containerNumber ? '#dc3545' : '#ccc'};color:white;border:none;padding:5px 10px;border-radius:4px;" ${entry.containerNumber ? '' : 'disabled'}>Complete</button></td>
-        `;
-        tbody.appendChild(tr);
+    onsite.forEach((o,i)=>{
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td>${o.release}</td>
+                <td>${o.shippingline}</td>
+                <td>${o.iso}</td>
+                <td>${o.grade}</td>
+                <td>${o.carrier}</td>
+                <td>${o.rego}</td>
+                <td>${o.doorDirection}</td>
+                <td><input data-i="${i}" value="${o.containerNumber||''}" class="containerInput"></td>
+                <td><button data-i="${i}" class="completeBtn" ${o.containerNumber?'':'disabled'}>Complete</button></td>
+            </tr>
+        `);
     });
 
-    document.querySelectorAll('.containerInput').forEach(input => {
-        input.addEventListener('input', (e) => {
-            const idx = e.target.dataset.index;
-            onsite[idx].containerNumber = e.target.value.trim();
-            localStorage.setItem('onsite', JSON.stringify(onsite));
-            const btn = e.target.closest('tr').querySelector('.completeBtn');
-            btn.disabled = !onsite[idx].containerNumber;
-            btn.style.background = onsite[idx].containerNumber ? '#dc3545' : '#ccc';
-        });
-    });
-
-    document.querySelectorAll('.completeBtn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const idx = parseInt(btn.dataset.index);
-            const completed = { 
-                ...onsite[idx], 
-                completedAt: new Date().toLocaleString(),
-                completedDate: today
-            };
-            history.push(completed);
-            localStorage.setItem('history', JSON.stringify(history));
-            onsite.splice(idx, 1);
-            localStorage.setItem('onsite', JSON.stringify(onsite));
+    document.querySelectorAll('.containerInput').forEach(i=>{
+        i.oninput=e=>{
+            onsite[e.target.dataset.i].containerNumber=e.target.value.trim();
+            localStorage.setItem('onsite',JSON.stringify(onsite));
             renderOnsite();
-            if (document.getElementById('history').classList.contains('active')) renderHistory();
-        });
+        };
+    });
+
+    document.querySelectorAll('.completeBtn').forEach(b=>{
+        b.onclick=()=>{
+            const i=b.dataset.i;
+            history.push({...onsite[i],completedAt:new Date().toLocaleString(),completedDate:TODAY.dateKey});
+            onsite.splice(i,1);
+            localStorage.setItem('onsite',JSON.stringify(onsite));
+            localStorage.setItem('history',JSON.stringify(history));
+            renderOnsite();
+            renderHistory();
+        };
     });
 }
 
-// Auto-fill
-document.getElementById('modal-release').addEventListener('blur', () => {
-    const rel = document.getElementById('modal-release').value.trim().toUpperCase();
-    const match = bookings.find(b => b.release.toUpperCase() === rel && b.date === today && !b.completed);
-    if (match) {
-        document.getElementById('modal-shippingline').value = match.shippingline;
-        document.getElementById('modal-iso').value = match.iso;
-        document.getElementById('modal-grade').value = match.grade;
-        document.getElementById('modal-carrier').value = match.carrier;
-        match.completed = true;
-        localStorage.setItem('bookings', JSON.stringify(bookings));
-        if (document.getElementById('bookings').classList.contains('active')) renderBookings();
-    }
-});
-
-// On Site submit
-document.getElementById('onsiteForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const newEntry = {
-        release: document.getElementById('modal-release').value.trim().toUpperCase(),
-        shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
-        iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
-        grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
-        carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
-        rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
-        doorDirection: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
-        containerNumber: ''
-    };
-    onsite.push(newEntry);
-    localStorage.setItem('onsite', JSON.stringify(onsite));
-    e.target.reset();
-    renderOnsite();
-    if (document.getElementById('bookings').classList.contains('active')) renderBookings();
-});
-
-// HISTORY
+/* ===============================
+   HISTORY
+================================ */
 function renderHistory() {
-    const tbody = document.getElementById('historyBody');
-    tbody.innerHTML = '';
-    history
-        .filter(h => h.completedDate === historyDate)
-        .forEach(entry => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${entry.release}</td>
-                <td>${entry.shippingline}</td>
-                <td>${entry.iso}</td>
-                <td>${entry.grade}</td>
-                <td>${entry.carrier}</td>
-                <td>${entry.rego}</td>
-                <td>${entry.doorDirection}</td>
-                <td>${entry.containerNumber || ''}</td>
-                <td>${entry.completedAt || ''}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+    const tbody = historyBody;
+    tbody.innerHTML='';
+    history.filter(h=>h.completedDate===historyDate).forEach(h=>{
+        tbody.insertAdjacentHTML('beforeend',`
+            <tr>
+                <td>${h.release}</td>
+                <td>${h.shippingline}</td>
+                <td>${h.iso}</td>
+                <td>${h.grade}</td>
+                <td>${h.carrier}</td>
+                <td>${h.rego}</td>
+                <td>${h.doorDirection}</td>
+                <td>${h.containerNumber||''}</td>
+                <td>${h.completedAt||''}</td>
+            </tr>
+        `);
+    });
 }
 
-// Initial renders
+/* ===============================
+   INITIAL
+================================ */
 renderBookings();
 renderOnsite();
 </script>
+
 </body>
 </html>
