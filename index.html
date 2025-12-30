@@ -380,11 +380,22 @@ document.querySelectorAll('.settings-item').forEach(item => {
 
 // REAL DYNAMIC DATE - FIXED
 const now = new Date();
-const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    .toISOString()
-    .split('T')[0];
 
-const todayFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+// LOCAL ISO DATE (for <input type="date">)
+const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+).toISOString().split('T')[0];
+
+// HUMAN READABLE DATE (label only)
+const todayFull = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+});
+
 
 document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
 
