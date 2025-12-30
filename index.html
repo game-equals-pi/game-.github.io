@@ -2,22 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Container Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Container Dashboard</title>
 
 <style>
-/* (YOUR ORIGINAL STYLES — UNCHANGED) */
 body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
 .tabs { background:#333; display:flex; align-items:center; padding:0 20px; position:relative; }
-.tab { padding:15px 30px; color:white; cursor:pointer; }
+.tab { padding:15px 30px; color:white; cursor:pointer; user-select:none; }
 .tab.active { background:white; color:#333; font-weight:bold; }
 .content { display:none; padding:30px; margin:20px; background:white; border-radius:8px; }
 .content.active { display:block; }
 .date-label { margin-left:auto; background:#333; color:white; padding:8px 16px; border-radius:4px; font-weight:bold; }
 .tab-date { position:absolute; right:20px; top:50%; transform:translateY(-50%); }
+
 table { width:100%; border-collapse:collapse; }
 th,td { padding:10px; border-bottom:1px solid #ddd; }
 th { background:#333; color:white; }
+tr:hover { background:#f0f0f0; }
+
+.truck-group1 { background:#e6f7ff !important; }
+.truck-group2 { background:#e6ffe6 !important; }
+
+.add-container-form {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:10px;
+  margin-bottom:30px;
+  padding:15px;
+  background:#f9f9f9;
+  border-radius:8px;
+}
+.add-container-form button {
+  grid-column:span 2;
+  padding:10px;
+  background:#28a745;
+  color:white;
+  border:none;
+  border-radius:4px;
+}
 </style>
 </head>
 
@@ -30,119 +52,213 @@ th { background:#333; color:white; }
   <div class="date-label" id="dateLabel"></div>
 </div>
 
+<!-- BOOKINGS -->
 <div id="bookings" class="content active">
-  <h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
-  <table>
-    <thead><tr><th>Release</th><th>Carrier</th></tr></thead>
-    <tbody id="bookingsBody"></tbody>
-  </table>
+<h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
+
+<form id="bookingForm">
+<table>
+<tr><td>Release</td><td><input id="booking-release" required></td></tr>
+<tr><td>Shipping Line</td><td><input id="booking-shippingline" required></td></tr>
+<tr><td>ISO</td><td><input id="booking-iso" required></td></tr>
+<tr><td>Grade</td><td><input id="booking-grade" required></td></tr>
+<tr><td>Carrier</td><td><input id="booking-carrier" required></td></tr>
+<tr><td colspan="2"><button>Add Booking</button></td></tr>
+</table>
+</form>
+
+<button id="toggleCompleted">Hide Completed</button>
+
+<table>
+<thead><tr><th>Release</th><th>Carrier</th><th>Done</th></tr></thead>
+<tbody id="bookingsBody"></tbody>
+</table>
 </div>
 
+<!-- ON SITE -->
 <div id="onsite" class="content">
-  <h1>On Site</h1>
-  <table>
-    <thead><tr><th>Release</th><th>Carrier</th></tr></thead>
-    <tbody id="onsiteBody"></tbody>
-  </table>
+<h1>On Site Containers</h1>
+
+<form id="onsiteForm" class="add-container-form">
+<input id="modal-release" placeholder="Release" required>
+<input id="modal-shippingline" placeholder="Line" required>
+<input id="modal-iso" placeholder="ISO" required>
+<input id="modal-grade" placeholder="Grade" required>
+<input id="modal-carrier" placeholder="Carrier" required>
+<input id="modal-rego" placeholder="Rego" required>
+<input id="modal-doorDirection" placeholder="Door Dir" required>
+<button>Add to On Site</button>
+</form>
+
+<table>
+<thead>
+<tr>
+<th>Release</th><th>Carrier</th><th>Rego</th>
+<th>Door</th><th>Container</th><th>Action</th>
+</tr>
+</thead>
+<tbody id="onsiteBody"></tbody>
+</table>
 </div>
 
+<!-- HISTORY -->
 <div id="history" class="content">
-  <h1>History <input type="date" id="historyDate" class="tab-date"></h1>
-  <table>
-    <thead><tr><th>Release</th><th>Completed</th></tr></thead>
-    <tbody id="historyBody"></tbody>
-  </table>
+<h1>History <input type="date" id="historyDate" class="tab-date"></h1>
+<table>
+<thead><tr><th>Release</th><th>Completed</th></tr></thead>
+<tbody id="historyBody"></tbody>
+</table>
 </div>
 
 <script>
 /* ===============================
-   SINGLE SOURCE OF TIME — LOCAL
+   SINGLE SOURCE OF LOCAL TIME
 ================================ */
 const now = new Date();
-
-const localDateParts = {
-  year: now.getFullYear(),
-  month: now.getMonth(),
-  day: now.getDate()
+const DATE = {
+  key:
+    now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0'),
+  label: now.toLocaleDateString('en-US',{
+    weekday:'long',year:'numeric',month:'long',day:'numeric'
+  })
 };
 
-// FOR <input type="date">
-const localDateKey =
-  localDateParts.year + '-' +
-  String(localDateParts.month + 1).padStart(2,'0') + '-' +
-  String(localDateParts.day).padStart(2,'0');
+dateLabel.textContent = `Today: ${DATE.label}`;
+bookingsDate.value = DATE.key;
+historyDate.value = DATE.key;
 
-// FOR BANNER
-const localDateLabel = now.toLocaleDateString('en-US', {
-  weekday: 'long',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric'
-});
-
-// APPLY EVERYWHERE
-document.getElementById('dateLabel').textContent = `Today: ${localDateLabel}`;
-
-const bookingsDateInput = document.getElementById('bookingsDate');
-const historyDateInput  = document.getElementById('historyDate');
-
-bookingsDateInput.value = localDateKey;
-historyDateInput.value  = localDateKey;
-
-let bookingsDate = localDateKey;
-let historyDate  = localDateKey;
+let bookingsDate = DATE.key;
+let historyDate  = DATE.key;
 
 /* ===============================
-   TAB SYSTEM
+   TABS
 ================================ */
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.onclick=()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(tab.dataset.tab).classList.add('active');
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.content').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab).classList.add('active');
   };
 });
 
 /* ===============================
-   DATE CHANGES
-================================ */
-bookingsDateInput.onchange=e=>{
-  bookingsDate=e.target.value;
-  renderBookings();
-};
-historyDateInput.onchange=e=>{
-  historyDate=e.target.value;
-  renderHistory();
-};
-
-/* ===============================
    DATA
 ================================ */
-let bookings=[
-  {date:localDateKey,release:'ABC123',carrier:'MAERSK'}
-];
-let history=[];
+let bookings = JSON.parse(localStorage.getItem('bookings')||'[]');
+let onsite   = JSON.parse(localStorage.getItem('onsite')||'[]');
+let history  = JSON.parse(localStorage.getItem('history')||'[]');
+let hideCompleted=false;
 
 /* ===============================
-   RENDERS
+   BOOKINGS
 ================================ */
 function renderBookings(){
   bookingsBody.innerHTML='';
   bookings.filter(b=>b.date===bookingsDate)
     .forEach(b=>{
-      bookingsBody.innerHTML+=`<tr><td>${b.release}</td><td>${b.carrier}</td></tr>`;
-    });
-}
-function renderHistory(){
-  historyBody.innerHTML='';
-  history.filter(h=>h.date===historyDate)
-    .forEach(h=>{
-      historyBody.innerHTML+=`<tr><td>${h.release}</td><td>${h.time}</td></tr>`;
+      if(hideCompleted && b.completed) return;
+      bookingsBody.innerHTML+=`
+        <tr>
+          <td>${b.release}</td>
+          <td>${b.carrier}</td>
+          <td><input type="checkbox" ${b.completed?'checked':''} disabled></td>
+        </tr>`;
     });
 }
 
+bookingForm.onsubmit=e=>{
+  e.preventDefault();
+  bookings.push({
+    date:bookingsDate,
+    release:booking-release.value.toUpperCase(),
+    shippingline:booking-shippingline.value.toUpperCase(),
+    iso:booking-iso.value.toUpperCase(),
+    grade:booking-grade.value.toUpperCase(),
+    carrier:booking-carrier.value.toUpperCase(),
+    completed:false
+  });
+  localStorage.setItem('bookings',JSON.stringify(bookings));
+  bookingForm.reset();
+  renderBookings();
+};
+
+toggleCompleted.onclick=()=>{
+  hideCompleted=!hideCompleted;
+  renderBookings();
+};
+
+/* ===============================
+   ON SITE
+================================ */
+function renderOnsite(){
+  onsiteBody.innerHTML='';
+  onsite.forEach((o,i)=>{
+    onsiteBody.innerHTML+=`
+    <tr>
+      <td>${o.release}</td>
+      <td>${o.carrier}</td>
+      <td>${o.rego}</td>
+      <td>${o.doorDirection}</td>
+      <td><input value="${o.containerNumber||''}" data-i="${i}"></td>
+      <td><button ${!o.containerNumber?'disabled':''} data-i="${i}">Complete</button></td>
+    </tr>`;
+  });
+
+  onsiteBody.querySelectorAll('input').forEach(inp=>{
+    inp.oninput=e=>{
+      onsite[e.target.dataset.i].containerNumber=e.target.value;
+      localStorage.setItem('onsite',JSON.stringify(onsite));
+      renderOnsite();
+    };
+  });
+
+  onsiteBody.querySelectorAll('button').forEach(btn=>{
+    btn.onclick=()=>{
+      const o=onsite.splice(btn.dataset.i,1)[0];
+      history.push({...o,completedAt:new Date().toLocaleString(),completedDate:DATE.key});
+      localStorage.setItem('onsite',JSON.stringify(onsite));
+      localStorage.setItem('history',JSON.stringify(history));
+      renderOnsite(); renderHistory();
+    };
+  });
+}
+
+onsiteForm.onsubmit=e=>{
+  e.preventDefault();
+  onsite.push({
+    release:modal-release.value.toUpperCase(),
+    shippingline:modal-shippingline.value.toUpperCase(),
+    iso:modal-iso.value.toUpperCase(),
+    grade:modal-grade.value.toUpperCase(),
+    carrier:modal-carrier.value.toUpperCase(),
+    rego:modal-rego.value.toUpperCase(),
+    doorDirection:modal-doorDirection.value.toUpperCase()
+  });
+  localStorage.setItem('onsite',JSON.stringify(onsite));
+  onsiteForm.reset();
+  renderOnsite();
+};
+
+/* ===============================
+   HISTORY
+================================ */
+function renderHistory(){
+  historyBody.innerHTML='';
+  history.filter(h=>h.completedDate===historyDate)
+    .forEach(h=>{
+      historyBody.innerHTML+=`<tr><td>${h.release}</td><td>${h.completedAt}</td></tr>`;
+    });
+}
+
+bookingsDate.onchange=e=>{ bookingsDate=e.target.value; renderBookings(); };
+historyDate.onchange=e=>{ historyDate=e.target.value; renderHistory(); };
+
 renderBookings();
+renderOnsite();
+renderHistory();
 </script>
 
 </body>
