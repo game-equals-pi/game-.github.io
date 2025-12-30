@@ -282,21 +282,24 @@ function renderOnsite() {
     const tbody = document.getElementById('onsiteBody');
     tbody.innerHTML = '';
     
-    // Sort by Rego
-    onsite.sort((a, b) => a.rego.localeCompare(b.rego));
+    // NO SORTING ANYMORE — keeps add order (newest at bottom)
+    // We'll still detect groups for coloring based on current order
 
     const regoCount = {};
     onsite.forEach(entry => {
         regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1;
     });
 
-    let currentRego = '';
-    let groupColor = 1; // Start with 1 (blue)
+    let currentRego = null;
+    let groupColor = 1; // 1 or 2
 
     onsite.forEach((entry, index) => {
         if (entry.rego !== currentRego) {
             currentRego = entry.rego;
-            groupColor = 3 - groupColor; // Toggle 1<->2
+            // Only alternate if this rego is actually a group (>1)
+            if (regoCount[entry.rego] > 1) {
+                groupColor = 3 - groupColor; // toggle 1 ↔ 2
+            }
         }
 
         const tr = document.createElement('tr');
@@ -319,6 +322,7 @@ function renderOnsite() {
         tbody.appendChild(tr);
     });
 
+    // Rest of the event listeners (notes + complete) stay exactly the same
     document.querySelectorAll('.notesInput').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = e.target.dataset.index;
@@ -343,7 +347,6 @@ function renderOnsite() {
         });
     });
 }
-
 // Auto-fill ONLY if uncompleted match exists, mark THAT one
 document.getElementById('modal-release').addEventListener('blur', () => {
     const rel = document.getElementById('modal-release').value.trim();
