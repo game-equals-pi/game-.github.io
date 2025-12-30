@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Container Dashboard</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; transition: background 0.3s; }
         .tabs {
             background: #333;
             display: flex;
             padding: 0 20px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             position: relative;
+            align-items: center;
         }
         .tab {
             padding: 15px 30px;
@@ -36,6 +37,7 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             display: none;
+            transition: background 0.3s, color 0.3s;
         }
         .content.active { display: block; }
         h1 { 
@@ -48,21 +50,18 @@
             width: 100%; 
             border-collapse: collapse; 
             background: white;
+            transition: background 0.3s;
         }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; transition: border-color 0.3s, background 0.3s, color 0.3s; }
         th { background: #333; color: white; }
         tr:hover { background: #f0f0f0; }
-        
-        .truck-group1 {
-            background: #e6f7ff !important; /* Light blue */
-        }
-        .truck-group2 {
-            background: #e6ffe6 !important; /* Light green */
-        }
-        
+
+        .truck-group1 { background: #e6f7ff !important; }
+        .truck-group2 { background: #e6ffe6 !important; }
+
         .date-label {
             position: absolute;
-            right: 20px;
+            right: 100px;
             top: 12px;
             background: #333;
             color: white;
@@ -70,6 +69,40 @@
             border-radius: 4px;
             font-weight: bold;
         }
+        .settings-btn {
+            position: absolute;
+            right: 20px;
+            top: 12px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        .settings-btn:hover { opacity: 0.8; }
+
+        .settings-dropdown {
+            display: none;
+            position: absolute;
+            right: 20px;
+            top: 60px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 200px;
+        }
+        .settings-dropdown.active { display: block; }
+        .settings-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .settings-item:hover { background: #f0f0f0; }
+        .settings-item:last-child { border-bottom: none; }
+
         .tab-date {
             position: absolute;
             right: 20px;
@@ -81,6 +114,37 @@
             border-radius: 4px;
             background: white;
         }
+
+        /* THEMES */
+        body.dark {
+            background: #121212;
+            color: #e0e0e0;
+        }
+        body.dark .content, body.dark table { background: #1e1e1e; }
+        body.dark th { background: #333; }
+        body.dark td { border-color: #444; }
+        body.dark tr:hover { background: #2a2a2a; }
+        body.dark .settings-dropdown { background: #1e1e1e; border-color: #444; }
+        body.dark .settings-item:hover { background: #333; }
+
+        body.ocean {
+            background: #e3f2fd;
+        }
+        body.ocean .content, body.ocean table { background: #ffffff; }
+        body.ocean .tabs { background: #01579b; }
+        body.ocean .tab.active { background: white; color: #01579b; }
+        body.ocean th { background: #0288d1; }
+
+        body.high-contrast {
+            background: black;
+            color: white;
+        }
+        body.high-contrast .content, body.high-contrast table { background: black; }
+        body.high-contrast th { background: white; color: black; }
+        body.high-contrast td { border-color: white; }
+        body.high-contrast tr:hover { background: #333; }
+        body.high-contrast .tab { color: yellow; }
+        body.high-contrast .tab.active { background: yellow; color: black; }
     </style>
 </head>
 <body>
@@ -89,8 +153,17 @@
     <div class="tab" data-tab="onsite">On Site</div>
     <div class="tab" data-tab="history">History</div>
     <div class="date-label">Today: Tuesday, December 30, 2025</div>
+    <button class="settings-btn" id="settingsBtn">⚙️</button>
+    
+    <div class="settings-dropdown" id="settingsDropdown">
+        <div class="settings-item" data-theme="light">☀️ Light Theme</div>
+        <div class="settings-item" data-theme="dark">🌙 Dark Theme</div>
+        <div class="settings-item" data-theme="ocean">🌊 Ocean Theme</div>
+        <div class="settings-item" data-theme="high-contrast">🔲 High Contrast</div>
+    </div>
 </div>
 
+<!-- Rest of your HTML stays exactly the same -->
 <div id="bookings" class="content active">
     <h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
    
@@ -213,6 +286,72 @@
 </div>
 
 <script>
+// Load theme from localStorage or default to light
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.body.classList.add(savedTheme);
+
+// Settings dropdown
+document.getElementById('settingsBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('settingsDropdown').classList.toggle('active');
+});
+
+// Close dropdown when clicking elsewhere
+document.addEventListener('click', () => {
+    document.getElementById('settingsDropdown').classList.remove('active');
+});
+
+// Theme switcher
+document.querySelectorAll('.settings-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const theme = item.dataset.theme;
+        document.body.className = ''; // clear all
+        document.body.classList.add(theme);
+        localStorage.setItem('theme', theme);
+        document.getElementById('settingsDropdown').classList.remove('active');
+    });
+});
+
+// Rest of your existing script (unchanged)
+let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+let onsite = JSON.parse(localStorage.getItem('onsite') || '[]');
+let history = JSON.parse(localStorage.getItem('history') || '[]');
+let hideCompleted = false;
+
+const today = '2025-12-30';
+let bookingsDate = today;
+let historyDate = today;
+
+document.getElementById('bookingsDate').value = today;
+document.getElementById('historyDate').value = today;
+
+// TAB SWITCHING + reset to today
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+
+        if (tab.dataset.tab === 'bookings') {
+            bookingsDate = today;
+            document.getElementById('bookingsDate').value = today;
+            renderBookings();
+        }
+        if (tab.dataset.tab === 'history') {
+            historyDate = today;
+            document.getElementById('historyDate').value = today;
+            renderHistory();
+        }
+        if (tab.dataset.tab === 'onsite') {
+            renderOnsite();
+        }
+    });
+});
+
+// ... [rest of your existing script exactly as before - bookings, onsite, history, etc.] ...
+// (I'm not repeating the entire script here to save space, but keep everything else from your last working version)
+
 // Global data
 let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
 let onsite = JSON.parse(localStorage.getItem('onsite') || '[]');
