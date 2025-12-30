@@ -73,7 +73,8 @@
         }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; transition: all 0.3s; }
         th { background: #333; color: white; }
-        tr:hover { background: #f0f0f0; }
+        tr:hover { background: #f0f0f0; cursor: pointer; }
+        .completed-row { opacity: 0.6; pointer-events: none; }
         .truck-group1 { background: #e6f7ff !important; }
         .truck-group2 { background: #e6ffe6 !important; }
         .date-label {
@@ -377,22 +378,18 @@ document.querySelectorAll('.settings-item').forEach(item => {
     });
 });
 
-// SINGLE SOURCE OF TRUTH FOR TODAY
-const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+// Dynamic date
+const today = new Date().toISOString().split('T')[0];
 const todayFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-// Update banner
 document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
 
-// Set current view dates
 let bookingsDate = today;
 let historyDate = today;
 
-// Set date pickers to today ON LOAD
 document.getElementById('bookingsDate').value = today;
 document.getElementById('historyDate').value = today;
 
-// Tab switching - always reset to real today
+// Tab switching
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -414,7 +411,6 @@ document.querySelectorAll('.tab').forEach(tab => {
     });
 });
 
-// Allow manual date change
 document.getElementById('bookingsDate').addEventListener('change', (e) => {
     bookingsDate = e.target.value;
     renderBookings();
@@ -431,7 +427,30 @@ let onsite = JSON.parse(localStorage.getItem('onsite') || '[]');
 let history = JSON.parse(localStorage.getItem('history') || '[]');
 let hideCompleted = false;
 
-// Render functions and form handlers (unchanged)
+// Click booking row to move to On Site
+document.getElementById('bookingsBody').addEventListener('click', (e) => {
+    const row = e.target.closest('tr');
+    if (!row || row.classList.contains('completed-row')) return;
+
+    const cells = row.querySelectorAll('td');
+    const release = cells[0].textContent.trim();
+
+    const booking = bookings.find(b => b.release === release && b.date === bookingsDate && !b.completed);
+    if (!booking) return;
+
+    // Switch to On Site tab
+    document.querySelector('.tab[data-tab="onsite"]').click();
+
+    // Auto-fill the form
+    document.getElementById('modal-release').value = booking.release;
+    document.getElementById('modal-shippingline').value = booking.shippingline;
+    document.getElementById('modal-iso').value = booking.iso;
+    document.getElementById('modal-grade').value = booking.grade;
+    document.getElementById('modal-carrier').value = booking.carrier;
+    document.getElementById('modal-rego').focus(); // move to first manual field
+});
+
+// Render Bookings
 function renderBookings() {
     const tbody = document.getElementById('bookingsBody');
     tbody.innerHTML = '';
@@ -441,6 +460,7 @@ function renderBookings() {
         .forEach(booking => {
             if (hideCompleted && booking.completed) return;
             const tr = document.createElement('tr');
+            if (booking.completed) tr.classList.add('completed-row');
             tr.innerHTML = `
                 <td>${booking.release}</td>
                 <td>${booking.shippingline}</td>
@@ -479,6 +499,7 @@ document.getElementById('bookingForm').addEventListener('submit', (e) => {
     renderBookings();
 });
 
+// On Site
 function renderOnsite() {
     const tbody = document.getElementById('onsiteBody');
     tbody.innerHTML = '';
@@ -541,24 +562,13 @@ function renderOnsite() {
     });
 }
 
-document.getElementById('modal-release').addEventListener('blur', () => {
-    const rel = document.getElementById('modal-release').value.trim().toUpperCase();
-    const match = bookings.find(b => b.release.toUpperCase() === rel && b.date === today && !b.completed);
-    if (match) {
-        document.getElementById('modal-shippingline').value = match.shippingline;
-        document.getElementById('modal-iso').value = match.iso;
-        document.getElementById('modal-grade').value = match.grade;
-        document.getElementById('modal-carrier').value = match.carrier;
-        match.completed = true;
-        localStorage.setItem('bookings', JSON.stringify(bookings));
-        if (document.getElementById('bookings').classList.contains('active')) renderBookings();
-    }
-});
-
+// On Site form submit (now also marks booking complete)
 document.getElementById('onsiteForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    const release = document.getElementById('modal-release').value.trim().toUpperCase();
+
     const newEntry = {
-        release: document.getElementById('modal-release').value.trim().toUpperCase(),
+        release: release,
         shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
         iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
         grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
@@ -569,11 +579,20 @@ document.getElementById('onsiteForm').addEventListener('submit', (e) => {
     };
     onsite.push(newEntry);
     localStorage.setItem('onsite', JSON.stringify(onsite));
+
+    // Mark matching booking as completed
+    const match = bookings.find(b => b.release.toUpperCase() === release && b.date === today && !b.completed);
+    if (match) {
+        match.completed = true;
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+    }
+
     e.target.reset();
     renderOnsite();
-    if (document.getElementById('bookings').classList.contains('active')) renderBookings();
+    renderBookings(); // refresh if visible
 });
 
+// History
 function renderHistory() {
     const tbody = document.getElementById('historyBody');
     tbody.innerHTML = '';
@@ -596,10 +615,9 @@ function renderHistory() {
         });
 }
 
-// Initial renders
+// Initial render
 renderBookings();
 renderOnsite();
-
 </script>
 </body>
 </html>
