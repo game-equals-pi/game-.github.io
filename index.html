@@ -225,7 +225,7 @@
     <div class="tab active" data-tab="bookings">Bookings</div>
     <div class="tab" data-tab="onsite">On Site</div>
     <div class="tab" data-tab="history">History</div>
-    <div class="date-label">Today: Tuesday, December 30, 2025</div>
+    <div class="date-label" id="dateLabel">Today: Loading...</div>
 
     <div class="settings-dropdown" id="settingsDropdown">
         <div class="settings-item" data-theme="light">☀️ Light Theme</div>
@@ -393,9 +393,13 @@ let onsite = JSON.parse(localStorage.getItem('onsite') || '[]');
 let history = JSON.parse(localStorage.getItem('history') || '[]');
 let hideCompleted = false;
 
-const today = '2025-12-30';
-let bookingsDate = today;
-let historyDate = today;
+const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+const todayFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+// Update banner with real today
+document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
+    
+document.getElementById('bookingsDate').value = today;
+document.getElementById('historyDate').value = today;
 
 document.getElementById('bookingsDate').value = today;
 document.getElementById('historyDate').value = today;
