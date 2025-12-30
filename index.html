@@ -44,6 +44,13 @@
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #333; color: white; }
         tr:hover { background: #f0f0f0; }
+
+                .truck-group {
+            background: #e6f7ff !important;
+        }
+        .truck-group + .truck-group {
+            border-top: 3px solid #91d5ff;
+        }
     </style>
 </head>
 <body>
@@ -88,6 +95,11 @@
     </form>
 
     <h2 style="text-align:center; margin-top:40px;">Current Bookings</h2>
+    <div style="text-align:right; margin-bottom:10px;">
+    <button id="toggleCompleted" style="padding:8px 16px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer;">
+        Hide Completed
+    </button>
+</div>
     <table id="bookingsTable">
         <thead>
             <tr>
@@ -96,6 +108,7 @@
                 <th>ISO</th>
                 <th>Grade</th>
                 <th>Carrier</th>
+                <th>Completed</th>
             </tr>
         </thead>
         <tbody id="bookingsBody">
@@ -191,27 +204,29 @@
 let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
 let onsite = JSON.parse(localStorage.getItem('onsite') || '[]');
 let history = JSON.parse(localStorage.getItem('history') || '[]');
+let hideCompleted = false;
 
-// === TAB SWITCHING (YOU DELETED THIS, DUDE!) ===
+// TAB SWITCHING
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        
         tab.classList.add('active');
         document.getElementById(tab.dataset.tab).classList.add('active');
-        
-        // Refresh history if switching to it
         if (tab.dataset.tab === 'history') renderHistory();
+        if (tab.dataset.tab === 'bookings') renderBookings();
     });
 });
 
-// === BOOKINGS ===
+// BOOKINGS
 function renderBookings() {
     const tbody = document.getElementById('bookingsBody');
     tbody.innerHTML = '';
     bookings.sort((a, b) => a.carrier.localeCompare(b.carrier));
+
     bookings.forEach(booking => {
+        if (hideCompleted && booking.completed) return; // skip if hidden
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${booking.release}</td>
@@ -219,10 +234,20 @@ function renderBookings() {
             <td>${booking.iso}</td>
             <td>${booking.grade}</td>
             <td>${booking.carrier}</td>
+            <td style="text-align:center;">
+                <input type="checkbox" ${booking.completed ? 'checked' : ''} disabled>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
+
+document.getElementById('toggleCompleted').addEventListener('click', (e) => {
+    hideCompleted = !hideCompleted;
+    e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
+    e.target.style.background = hideCompleted ? '#dc3545' : '#555';
+    renderBookings();
+});
 
 document.getElementById('bookingForm').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -231,7 +256,8 @@ document.getElementById('bookingForm').addEventListener('submit', (e) => {
         shippingline: document.getElementById('booking-shippingline').value.trim(),
         iso: document.getElementById('booking-iso').value.trim(),
         grade: document.getElementById('booking-grade').value.trim(),
-        carrier: document.getElementById('booking-carrier').value.trim()
+        carrier: document.getElementById('booking-carrier').value.trim(),
+        completed: false
     };
     bookings.push(newBooking);
     localStorage.setItem('bookings', JSON.stringify(bookings));
@@ -241,12 +267,24 @@ document.getElementById('bookingForm').addEventListener('submit', (e) => {
 
 renderBookings();
 
-// === ON SITE ===
+// ON SITE
 function renderOnsite() {
     const tbody = document.getElementById('onsiteBody');
     tbody.innerHTML = '';
+    
+    // Sort by Rego to group trucks together
+    onsite.sort((a, b) => a.rego.localeCompare(b.rego));
+
+    const regoCount = {};
+    onsite.forEach(entry => {
+        regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1;
+    });
+
     onsite.forEach((entry, index) => {
         const tr = document.createElement('tr');
+        const isGroup = regoCount[entry.rego] > 1;
+        if (isGroup) tr.classList.add('truck-group');
+
         tr.innerHTML = `
             <td>${entry.release}</td>
             <td>${entry.shippingline}</td>
@@ -261,6 +299,7 @@ function renderOnsite() {
         tbody.appendChild(tr);
     });
 
+    // Notes input
     document.querySelectorAll('.notesInput').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = e.target.dataset.index;
@@ -272,9 +311,10 @@ function renderOnsite() {
         });
     });
 
+    // Complete button
     document.querySelectorAll('.completeBtn').forEach(btn => {
         btn.addEventListener('click', () => {
-            const idx = btn.dataset.index;
+            const idx = parseInt(btn.dataset.index);
             const completed = { ...onsite[idx], completedAt: new Date().toLocaleString() };
             history.push(completed);
             localStorage.setItem('history', JSON.stringify(history));
@@ -286,7 +326,7 @@ function renderOnsite() {
     });
 }
 
-// Auto-fill in modal
+// Auto-fill + mark booking as completed
 document.getElementById('modal-release').addEventListener('blur', () => {
     const rel = document.getElementById('modal-release').value.trim();
     const match = bookings.find(b => b.release === rel);
@@ -295,10 +335,15 @@ document.getElementById('modal-release').addEventListener('blur', () => {
         document.getElementById('modal-iso').value = match.iso;
         document.getElementById('modal-grade').value = match.grade;
         document.getElementById('modal-carrier').value = match.carrier;
+
+        // Mark booking as completed
+        match.completed = true;
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+        if (document.getElementById('bookings').classList.contains('active')) renderBookings();
     }
 });
 
-// Modal
+// Modal controls
 document.getElementById('addNewBtn').onclick = () => document.getElementById('addModal').style.display = 'flex';
 document.getElementById('cancelBtn').onclick = () => {
     document.getElementById('addModal').style.display = 'none';
@@ -322,11 +367,14 @@ document.getElementById('onsiteForm').addEventListener('submit', (e) => {
     renderOnsite();
     document.getElementById('addModal').style.display = 'none';
     e.target.reset();
+
+    // Refresh bookings if visible
+    if (document.getElementById('bookings').classList.contains('active')) renderBookings();
 });
 
 renderOnsite();
 
-// === HISTORY ===
+// HISTORY
 function renderHistory() {
     const tbody = document.getElementById('historyBody');
     tbody.innerHTML = '';
