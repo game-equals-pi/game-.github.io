@@ -1,265 +1,605 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Container Dashboard</title>
-
-<style>
-body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; }
-.tabs { background:#333; display:flex; align-items:center; padding:0 20px; position:relative; }
-.tab { padding:15px 30px; color:white; cursor:pointer; user-select:none; }
-.tab.active { background:white; color:#333; font-weight:bold; }
-.content { display:none; padding:30px; margin:20px; background:white; border-radius:8px; }
-.content.active { display:block; }
-.date-label { margin-left:auto; background:#333; color:white; padding:8px 16px; border-radius:4px; font-weight:bold; }
-.tab-date { position:absolute; right:20px; top:50%; transform:translateY(-50%); }
-
-table { width:100%; border-collapse:collapse; }
-th,td { padding:10px; border-bottom:1px solid #ddd; }
-th { background:#333; color:white; }
-tr:hover { background:#f0f0f0; }
-
-.truck-group1 { background:#e6f7ff !important; }
-.truck-group2 { background:#e6ffe6 !important; }
-
-.add-container-form {
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:10px;
-  margin-bottom:30px;
-  padding:15px;
-  background:#f9f9f9;
-  border-radius:8px;
-}
-.add-container-form button {
-  grid-column:span 2;
-  padding:10px;
-  background:#28a745;
-  color:white;
-  border:none;
-  border-radius:4px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; transition: background 0.3s, color 0.3s; }
+        .tabs {
+            background: #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .settings-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 15px 20px;
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            color: inherit;
+        }
+        .settings-btn svg {
+            width: 28px;
+            height: 28px;
+            fill: currentColor;
+            transition: opacity 0.3s;
+        }
+        .settings-btn:hover svg {
+            opacity: 0.8;
+        }
+        .tab {
+            padding: 15px 30px;
+            color: white;
+            cursor: pointer;
+            border-bottom: 4px solid transparent;
+            transition: all 0.3s;
+            user-select: none;
+        }
+        .tab:hover { background: rgba(255,255,255,0.1); }
+        .tab.active {
+            background: white;
+            color: #333;
+            border-bottom: 4px solid #007bff;
+            font-weight: bold;
+        }
+        .content {
+            padding: 30px;
+            min-height: 80vh;
+            background: white;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+            transition: background 0.3s, color 0.3s;
+        }
+        .content.active { display: block; }
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            position: relative;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            transition: background 0.3s;
+        }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; transition: all 0.3s; }
+        th { background: #333; color: white; }
+        tr:hover { background: #f0f0f0; }
+        .truck-group1 { background: #e6f7ff !important; }
+        .truck-group2 { background: #e6ffe6 !important; }
+        .date-label {
+            margin-left: auto;
+            background: #333;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .settings-dropdown {
+            display: none;
+            position: absolute;
+            left: 20px;
+            top: 70px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            z-index: 1000;
+            width: 220px;
+        }
+        .settings-dropdown.active { display: block; }
+        .settings-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+        }
+        .settings-item:hover { background: #f0f0f0; }
+        .settings-item:last-child { border-bottom: none; }
+        .tab-date {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: white;
+        }
+        .add-container-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .add-container-form label {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .add-container-form input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .add-container-form button {
+            grid-column: span 2;
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        @media (max-width: 900px) {
+            .add-container-form button { grid-column: span 2; }
+        }
+        @media (max-width: 600px) {
+            .add-container-form { grid-template-columns: 1fr; }
+            .add-container-form button { grid-column: span 1; }
+        }
+        /* THEMES */
+        body.dark {
+            background: #121212;
+            color: #e0e0e0;
+        }
+        body.dark .content, body.dark table { background: #1e1e1e; }
+        body.dark th { background: #333; }
+        body.dark td { border-color: #444; }
+        body.dark tr:hover { background: #2a2a2a; }
+        body.dark .tabs { background: #1e1e1e; }
+        body.dark .tab { color: #e0e0e0; }
+        body.dark .settings-dropdown { background: #1e1e1e; border-color: #444; color: #e0e0e0; }
+        body.dark .settings-item:hover { background: #333; }
+        body.dark .add-container-form { background: #2a2a2a; border-color: #444; }
+        body.ocean {
+            background: #e3f2fd;
+        }
+        body.ocean .content, body.ocean table { background: #ffffff; }
+        body.ocean .tabs { background: #01579b; }
+        body.ocean .tab.active { background: white; color: #01579b; }
+        body.ocean th { background: #0288d1; }
+        body.high-contrast {
+            background: black;
+            color: white;
+        }
+        body.high-contrast .content, body.high-contrast table { background: black; }
+        body.high-contrast th { background: white; color: black; }
+        body.high-contrast td { border-color: white; }
+        body.high-contrast tr:hover { background: #333; }
+        body.high-contrast .tab { color: yellow; }
+        body.high-contrast .tab.active { background: yellow; color: black; }
+        body.high-contrast .settings-btn { color: yellow; }
+        body.blood {
+            background: #1a0000;
+            color: #ffcccc;
+        }
+        body.blood .tabs { background: #330000; }
+        body.blood .tab { color: #ff9999; }
+        body.blood .tab.active { background: #ff3333; color: white; border-bottom-color: #ff6666; }
+        body.blood .content, body.blood table { background: #330000; }
+        body.blood th { background: #990000; color: white; }
+        body.blood td { border-color: #660000; }
+        body.blood tr:hover { background: #660000; }
+        body.blood .settings-dropdown { background: #330000; border-color: #990000; color: #ffcccc; }
+        body.blood .settings-item:hover { background: #660000; }
+        body.blood .date-label { background: #990000; }
+        body.blood .add-container-form { background: #660000; border-color: #990000; }
+    </style>
 </head>
-
 <body>
-
 <div class="tabs">
-  <div class="tab active" data-tab="bookings">Bookings</div>
-  <div class="tab" data-tab="onsite">On Site</div>
-  <div class="tab" data-tab="history">History</div>
-  <div class="date-label" id="dateLabel"></div>
+    <button class="settings-btn" id="settingsBtn">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.92 0-.31-.02-.62-.06-.92l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.49.49 0 0 0-.5-.42h-3.84a.49.49 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22l-1.92 3.32c-.12.22-.07.47.12.61l2.03 1.58c-.04.3-.06.61-.06.92 0 .31.02.62.06.92l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.5.42h3.84c.26 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.07.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        </svg>
+    </button>
+    <div class="tab active" data-tab="bookings">Bookings</div>
+    <div class="tab" data-tab="onsite">On Site</div>
+    <div class="tab" data-tab="history">History</div>
+    <div class="date-label" id="dateLabel">Today: Loading...</div>
+
+    <div class="settings-dropdown" id="settingsDropdown">
+        <div class="settings-item" data-theme="light">☀️ Light Theme</div>
+        <div class="settings-item" data-theme="dark">🌙 Dark Theme</div>
+        <div class="settings-item" data-theme="ocean">🌊 Ocean Theme</div>
+        <div class="settings-item" data-theme="high-contrast">🔲 High Contrast</div>
+        <div class="settings-item" data-theme="blood">🩸 Blood Theme</div>
+    </div>
 </div>
 
-<!-- BOOKINGS -->
 <div id="bookings" class="content active">
-<h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
-
-<form id="bookingForm">
-<table>
-<tr><td>Release</td><td><input id="booking-release" required></td></tr>
-<tr><td>Shipping Line</td><td><input id="booking-shippingline" required></td></tr>
-<tr><td>ISO</td><td><input id="booking-iso" required></td></tr>
-<tr><td>Grade</td><td><input id="booking-grade" required></td></tr>
-<tr><td>Carrier</td><td><input id="booking-carrier" required></td></tr>
-<tr><td colspan="2"><button>Add Booking</button></td></tr>
-</table>
-</form>
-
-<button id="toggleCompleted">Hide Completed</button>
-
-<table>
-<thead><tr><th>Release</th><th>Carrier</th><th>Done</th></tr></thead>
-<tbody id="bookingsBody"></tbody>
-</table>
+    <h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
+   
+    <form id="bookingForm">
+        <table style="width:100%; max-width:800px; margin:20px auto;">
+            <tr>
+                <td><label>Release Number</label></td>
+                <td><input type="text" id="booking-release" required></td>
+            </tr>
+            <tr>
+                <td><label>Shipping Line</label></td>
+                <td><input type="text" id="booking-shippingline" required></td>
+            </tr>
+            <tr>
+                <td><label>ISO</label></td>
+                <td><input type="text" id="booking-iso" required placeholder="e.g. 42G1"></td>
+            </tr>
+            <tr>
+                <td><label>Grade</label></td>
+                <td><input type="text" id="booking-grade" required placeholder="A/B/C"></td>
+            </tr>
+            <tr>
+                <td><label>Carrier</label></td>
+                <td><input type="text" id="booking-carrier" required></td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align:center; padding-top:20px;">
+                    <button type="submit">Add Booking</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+    <h2 style="text-align:center; margin-top:40px;">Current Bookings</h2>
+    <div style="text-align:right; margin-bottom:10px;">
+        <button id="toggleCompleted" style="padding:8px 16px; background:#555; color:white; border:none; border-radius:4px; cursor:pointer;">
+            Hide Completed
+        </button>
+    </div>
+    <table id="bookingsTable">
+        <thead>
+            <tr>
+                <th>Release Number</th>
+                <th>Shipping Line</th>
+                <th>ISO</th>
+                <th>Grade</th>
+                <th>Carrier</th>
+                <th>Completed</th>
+            </tr>
+        </thead>
+        <tbody id="bookingsBody"></tbody>
+    </table>
 </div>
 
-<!-- ON SITE -->
 <div id="onsite" class="content">
-<h1>On Site Containers</h1>
+    <h1>On Site Containers</h1>
+   
+    <form id="onsiteForm" class="add-container-form">
+        <div>
+            <label>Release Number</label>
+            <input type="text" id="modal-release" required>
+        </div>
+        <div>
+            <label>Shipping Line</label>
+            <input type="text" id="modal-shippingline" required>
+        </div>
+        <div>
+            <label>ISO</label>
+            <input type="text" id="modal-iso" required>
+        </div>
+        <div>
+            <label>Grade</label>
+            <input type="text" id="modal-grade" required>
+        </div>
+        <div>
+            <label>Carrier</label>
+            <input type="text" id="modal-carrier" required>
+        </div>
+        <div>
+            <label>Rego</label>
+            <input type="text" id="modal-rego" required>
+        </div>
+        <div>
+            <label>Door Direction</label>
+            <input type="text" id="modal-doorDirection" required>
+        </div>
+        <div></div>
+        <button type="submit">Add to On Site</button>
+    </form>
 
-<form id="onsiteForm" class="add-container-form">
-<input id="modal-release" placeholder="Release" required>
-<input id="modal-shippingline" placeholder="Line" required>
-<input id="modal-iso" placeholder="ISO" required>
-<input id="modal-grade" placeholder="Grade" required>
-<input id="modal-carrier" placeholder="Carrier" required>
-<input id="modal-rego" placeholder="Rego" required>
-<input id="modal-doorDirection" placeholder="Door Dir" required>
-<button>Add to On Site</button>
-</form>
-
-<table>
-<thead>
-<tr>
-<th>Release</th><th>Carrier</th><th>Rego</th>
-<th>Door</th><th>Container</th><th>Action</th>
-</tr>
-</thead>
-<tbody id="onsiteBody"></tbody>
-</table>
+    <table id="onsiteTable">
+        <thead>
+            <tr>
+                <th>Release Number</th>
+                <th>Shipping Line</th>
+                <th>ISO</th>
+                <th>Grade</th>
+                <th>Carrier</th>
+                <th>Rego</th>
+                <th>Door Direction</th>
+                <th>Container Number</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="onsiteBody"></tbody>
+    </table>
 </div>
 
-<!-- HISTORY -->
 <div id="history" class="content">
-<h1>History <input type="date" id="historyDate" class="tab-date"></h1>
-<table>
-<thead><tr><th>Release</th><th>Completed</th></tr></thead>
-<tbody id="historyBody"></tbody>
-</table>
+    <h1>History <input type="date" id="historyDate" class="tab-date"></h1>
+    <table id="historyTable">
+        <thead>
+            <tr>
+                <th>Release Number</th>
+                <th>Shipping Line</th>
+                <th>ISO</th>
+                <th>Grade</th>
+                <th>Carrier</th>
+                <th>Rego</th>
+                <th>Door Direction</th>
+                <th>Container Number</th>
+                <th>Completed At</th>
+            </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+    </table>
 </div>
 
 <script>
-/* ===============================
-   SINGLE SOURCE OF LOCAL TIME
-================================ */
-const now = new Date();
-const DATE = {
-  key:
-    now.getFullYear() + '-' +
-    String(now.getMonth()+1).padStart(2,'0') + '-' +
-    String(now.getDate()).padStart(2,'0'),
-  label: now.toLocaleDateString('en-US',{
-    weekday:'long',year:'numeric',month:'long',day:'numeric'
-  })
-};
+// Theme system
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.body.classList.add(savedTheme);
 
-dateLabel.textContent = `Today: ${DATE.label}`;
-bookingsDate.value = DATE.key;
-historyDate.value = DATE.key;
-
-let bookingsDate = DATE.key;
-let historyDate  = DATE.key;
-
-/* ===============================
-   TABS
-================================ */
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick=()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.content').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById(t.dataset.tab).classList.add('active');
-  };
+document.getElementById('settingsBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('settingsDropdown').classList.toggle('active');
 });
 
-/* ===============================
-   DATA
-================================ */
-let bookings = JSON.parse(localStorage.getItem('bookings')||'[]');
-let onsite   = JSON.parse(localStorage.getItem('onsite')||'[]');
-let history  = JSON.parse(localStorage.getItem('history')||'[]');
-let hideCompleted=false;
+document.addEventListener('click', () => {
+    document.getElementById('settingsDropdown').classList.remove('active');
+});
 
-/* ===============================
-   BOOKINGS
-================================ */
-function renderBookings(){
-  bookingsBody.innerHTML='';
-  bookings.filter(b=>b.date===bookingsDate)
-    .forEach(b=>{
-      if(hideCompleted && b.completed) return;
-      bookingsBody.innerHTML+=`
-        <tr>
-          <td>${b.release}</td>
-          <td>${b.carrier}</td>
-          <td><input type="checkbox" ${b.completed?'checked':''} disabled></td>
-        </tr>`;
+document.querySelectorAll('.settings-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const theme = item.dataset.theme;
+        document.body.className = '';
+        document.body.classList.add(theme);
+        localStorage.setItem('theme', theme);
+        document.getElementById('settingsDropdown').classList.remove('active');
+    });
+});
+
+// SINGLE SOURCE OF TRUTH FOR TODAY
+const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+const todayFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+// Update banner
+document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
+
+// Set current view dates
+let bookingsDate = today;
+let historyDate = today;
+
+// Set date pickers to today ON LOAD
+document.getElementById('bookingsDate').value = today;
+document.getElementById('historyDate').value = today;
+
+// Tab switching - always reset to real today
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+
+        if (tab.dataset.tab === 'bookings') {
+            bookingsDate = today;
+            document.getElementById('bookingsDate').value = today;
+            renderBookings();
+        } else if (tab.dataset.tab === 'history') {
+            historyDate = today;
+            document.getElementById('historyDate').value = today;
+            renderHistory();
+        } else if (tab.dataset.tab === 'onsite') {
+            renderOnsite();
+        }
+    });
+});
+
+// Allow manual date change
+document.getElementById('bookingsDate').addEventListener('change', (e) => {
+    bookingsDate = e.target.value;
+    renderBookings();
+});
+
+document.getElementById('historyDate').addEventListener('change', (e) => {
+    historyDate = e.target.value;
+    renderHistory();
+});
+
+// Data
+let bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+let onsite = JSON.parse(localStorage.getItem('onsite') || '[]');
+let history = JSON.parse(localStorage.getItem('history') || '[]');
+let hideCompleted = false;
+
+// Render functions and form handlers (unchanged)
+function renderBookings() {
+    const tbody = document.getElementById('bookingsBody');
+    tbody.innerHTML = '';
+    bookings
+        .filter(b => b.date === bookingsDate)
+        .sort((a, b) => a.carrier.toUpperCase().localeCompare(b.carrier.toUpperCase()))
+        .forEach(booking => {
+            if (hideCompleted && booking.completed) return;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${booking.release}</td>
+                <td>${booking.shippingline}</td>
+                <td>${booking.iso}</td>
+                <td>${booking.grade}</td>
+                <td>${booking.carrier}</td>
+                <td style="text-align:center;">
+                    <input type="checkbox" ${booking.completed ? 'checked' : ''} disabled>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+}
+
+document.getElementById('toggleCompleted').addEventListener('click', (e) => {
+    hideCompleted = !hideCompleted;
+    e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
+    e.target.style.background = hideCompleted ? '#dc3545' : '#555';
+    renderBookings();
+});
+
+document.getElementById('bookingForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const newBooking = {
+        date: bookingsDate,
+        release: document.getElementById('booking-release').value.trim().toUpperCase(),
+        shippingline: document.getElementById('booking-shippingline').value.trim().toUpperCase(),
+        iso: document.getElementById('booking-iso').value.trim().toUpperCase(),
+        grade: document.getElementById('booking-grade').value.trim().toUpperCase(),
+        carrier: document.getElementById('booking-carrier').value.trim().toUpperCase(),
+        completed: false
+    };
+    bookings.push(newBooking);
+    localStorage.setItem('bookings', JSON.stringify(bookings));
+    e.target.reset();
+    renderBookings();
+});
+
+function renderOnsite() {
+    const tbody = document.getElementById('onsiteBody');
+    tbody.innerHTML = '';
+    
+    const regoCount = {};
+    onsite.forEach(entry => regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1);
+
+    let currentRego = null;
+    let groupColor = 1;
+
+    onsite.forEach((entry, index) => {
+        if (entry.rego !== currentRego) {
+            currentRego = entry.rego;
+            if (regoCount[entry.rego] > 1) groupColor = 3 - groupColor;
+        }
+
+        const tr = document.createElement('tr');
+        if (regoCount[entry.rego] > 1) tr.classList.add(`truck-group${groupColor}`);
+
+        tr.innerHTML = `
+            <td>${entry.release}</td>
+            <td>${entry.shippingline}</td>
+            <td>${entry.iso}</td>
+            <td>${entry.grade}</td>
+            <td>${entry.carrier}</td>
+            <td>${entry.rego}</td>
+            <td>${entry.doorDirection}</td>
+            <td><input type="text" value="${entry.containerNumber || ''}" data-index="${index}" class="containerInput" style="width:100%;padding:5px;"></td>
+            <td><button class="completeBtn" data-index="${index}" style="background:${entry.containerNumber ? '#dc3545' : '#ccc'};color:white;border:none;padding:5px 10px;border-radius:4px;" ${entry.containerNumber ? '' : 'disabled'}>Complete</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll('.containerInput').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = e.target.dataset.index;
+            onsite[idx].containerNumber = e.target.value.trim();
+            localStorage.setItem('onsite', JSON.stringify(onsite));
+            const btn = e.target.closest('tr').querySelector('.completeBtn');
+            btn.disabled = !onsite[idx].containerNumber;
+            btn.style.background = onsite[idx].containerNumber ? '#dc3545' : '#ccc';
+        });
+    });
+
+    document.querySelectorAll('.completeBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = parseInt(btn.dataset.index);
+            const completed = { 
+                ...onsite[idx], 
+                completedAt: new Date().toLocaleString(),
+                completedDate: today
+            };
+            history.push(completed);
+            localStorage.setItem('history', JSON.stringify(history));
+            onsite.splice(idx, 1);
+            localStorage.setItem('onsite', JSON.stringify(onsite));
+            renderOnsite();
+            if (document.getElementById('history').classList.contains('active')) renderHistory();
+        });
     });
 }
 
-bookingForm.onsubmit=e=>{
-  e.preventDefault();
-  bookings.push({
-    date:bookingsDate,
-    release:booking-release.value.toUpperCase(),
-    shippingline:booking-shippingline.value.toUpperCase(),
-    iso:booking-iso.value.toUpperCase(),
-    grade:booking-grade.value.toUpperCase(),
-    carrier:booking-carrier.value.toUpperCase(),
-    completed:false
-  });
-  localStorage.setItem('bookings',JSON.stringify(bookings));
-  bookingForm.reset();
-  renderBookings();
-};
+document.getElementById('modal-release').addEventListener('blur', () => {
+    const rel = document.getElementById('modal-release').value.trim().toUpperCase();
+    const match = bookings.find(b => b.release.toUpperCase() === rel && b.date === today && !b.completed);
+    if (match) {
+        document.getElementById('modal-shippingline').value = match.shippingline;
+        document.getElementById('modal-iso').value = match.iso;
+        document.getElementById('modal-grade').value = match.grade;
+        document.getElementById('modal-carrier').value = match.carrier;
+        match.completed = true;
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+        if (document.getElementById('bookings').classList.contains('active')) renderBookings();
+    }
+});
 
-toggleCompleted.onclick=()=>{
-  hideCompleted=!hideCompleted;
-  renderBookings();
-};
-
-/* ===============================
-   ON SITE
-================================ */
-function renderOnsite(){
-  onsiteBody.innerHTML='';
-  onsite.forEach((o,i)=>{
-    onsiteBody.innerHTML+=`
-    <tr>
-      <td>${o.release}</td>
-      <td>${o.carrier}</td>
-      <td>${o.rego}</td>
-      <td>${o.doorDirection}</td>
-      <td><input value="${o.containerNumber||''}" data-i="${i}"></td>
-      <td><button ${!o.containerNumber?'disabled':''} data-i="${i}">Complete</button></td>
-    </tr>`;
-  });
-
-  onsiteBody.querySelectorAll('input').forEach(inp=>{
-    inp.oninput=e=>{
-      onsite[e.target.dataset.i].containerNumber=e.target.value;
-      localStorage.setItem('onsite',JSON.stringify(onsite));
-      renderOnsite();
+document.getElementById('onsiteForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const newEntry = {
+        release: document.getElementById('modal-release').value.trim().toUpperCase(),
+        shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
+        iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
+        grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
+        carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
+        rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
+        doorDirection: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
+        containerNumber: ''
     };
-  });
+    onsite.push(newEntry);
+    localStorage.setItem('onsite', JSON.stringify(onsite));
+    e.target.reset();
+    renderOnsite();
+    if (document.getElementById('bookings').classList.contains('active')) renderBookings();
+});
 
-  onsiteBody.querySelectorAll('button').forEach(btn=>{
-    btn.onclick=()=>{
-      const o=onsite.splice(btn.dataset.i,1)[0];
-      history.push({...o,completedAt:new Date().toLocaleString(),completedDate:DATE.key});
-      localStorage.setItem('onsite',JSON.stringify(onsite));
-      localStorage.setItem('history',JSON.stringify(history));
-      renderOnsite(); renderHistory();
-    };
-  });
+function renderHistory() {
+    const tbody = document.getElementById('historyBody');
+    tbody.innerHTML = '';
+    history
+        .filter(h => h.completedDate === historyDate)
+        .forEach(entry => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${entry.release}</td>
+                <td>${entry.shippingline}</td>
+                <td>${entry.iso}</td>
+                <td>${entry.grade}</td>
+                <td>${entry.carrier}</td>
+                <td>${entry.rego}</td>
+                <td>${entry.doorDirection}</td>
+                <td>${entry.containerNumber || ''}</td>
+                <td>${entry.completedAt || ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
 }
 
-onsiteForm.onsubmit=e=>{
-  e.preventDefault();
-  onsite.push({
-    release:modal-release.value.toUpperCase(),
-    shippingline:modal-shippingline.value.toUpperCase(),
-    iso:modal-iso.value.toUpperCase(),
-    grade:modal-grade.value.toUpperCase(),
-    carrier:modal-carrier.value.toUpperCase(),
-    rego:modal-rego.value.toUpperCase(),
-    doorDirection:modal-doorDirection.value.toUpperCase()
-  });
-  localStorage.setItem('onsite',JSON.stringify(onsite));
-  onsiteForm.reset();
-  renderOnsite();
-};
-
-/* ===============================
-   HISTORY
-================================ */
-function renderHistory(){
-  historyBody.innerHTML='';
-  history.filter(h=>h.completedDate===historyDate)
-    .forEach(h=>{
-      historyBody.innerHTML+=`<tr><td>${h.release}</td><td>${h.completedAt}</td></tr>`;
-    });
-}
-
-bookingsDate.onchange=e=>{ bookingsDate=e.target.value; renderBookings(); };
-historyDate.onchange=e=>{ historyDate=e.target.value; renderHistory(); };
-
+// Initial renders
 renderBookings();
 renderOnsite();
-renderHistory();
-</script>
 
+</script>
 </body>
 </html>
