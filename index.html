@@ -61,7 +61,7 @@
         table { width: 100%; border-collapse: collapse; background: white; transition: background 0.3s; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; transition: all 0.3s; }
         th { background: #333; color: white; }
-        tr:hover { background: #f0f0f0; cursor: pointer; }
+        tr:hover { background: #f0f0f0; }
         .completed-row { opacity: 0.6; pointer-events: none; }
         .truck-group1 { background: #e6f7ff !important; }
         .truck-group2 { background: #e6ffe6 !important; }
@@ -97,8 +97,28 @@
         }
         .add-container-form label { font-weight: bold; font-size: 14px; margin-bottom: 4px; display: block; }
         .add-container-form input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .add-container-form button { grid-column: span 2; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-        @media (max-width: 600px) { .add-container-form { grid-template-columns: 1fr; } .add-container-form button { grid-column: span 1; } }
+        .form-buttons {
+            grid-column: span 2;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .form-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .form-buttons button[type="submit"] {
+            background: #28a745;
+            color: white;
+        }
+        .form-buttons button[type="button"] {
+            background: #6c757d;
+            color: white;
+        }
+        @media (max-width: 600px) { .form-buttons { grid-column: span 1; } }
         #login-page { padding: 50px; text-align: center; max-width: 400px; margin: 100px auto; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         #login-page input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
         #login-page button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
@@ -119,6 +139,16 @@
         .settings-item { padding: 14px 16px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 15px; }
         .settings-item:hover { background: #f0f0f0; }
         .settings-item:last-child { border-bottom: none; }
+        .delete-btn, .completeBtn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .delete-btn { background: #6c757d; }
         /* Themes */
         body.dark { background: #121212; color: #e0e0e0; }
         body.dark .content, body.dark table { background: #1e1e1e; }
@@ -190,7 +220,6 @@
         </div>
     </div>
 
-    <!-- Full dashboard content (same as before) -->
     <div id="bookings" class="content active">
         <h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
         <form id="bookingForm">
@@ -200,7 +229,14 @@
                 <tr><td><label>ISO</label></td><td><input type="text" id="booking-iso" required></td></tr>
                 <tr><td><label>Grade</label></td><td><input type="text" id="booking-grade" required></td></tr>
                 <tr><td><label>Carrier</label></td><td><input type="text" id="booking-carrier" required></td></tr>
-                <tr><td colspan="2" style="text-align:center; padding-top:20px;"><button type="submit">Add Booking</button></td></tr>
+                <tr>
+                    <td colspan="2" style="text-align:center; padding-top:20px;">
+                        <div class="form-buttons">
+                            <button type="submit">Add Booking</button>
+                            <button type="button" id="clear-booking">Clear Form</button>
+                        </div>
+                    </td>
+                </tr>
             </table>
         </form>
         <h2 style="text-align:center; margin-top:40px;">Current Bookings</h2>
@@ -208,7 +244,7 @@
             <button id="toggleCompleted">Hide Completed</button>
         </div>
         <table id="bookingsTable">
-            <thead><tr><th>Release Number</th><th>Shipping Line</th><th>ISO</th><th>Grade</th><th>Carrier</th><th>Completed</th></tr></thead>
+            <thead><tr><th>Release Number</th><th>Shipping Line</th><th>ISO</th><th>Grade</th><th>Carrier</th><th>Completed</th><th></th></tr></thead>
             <tbody id="bookingsBody"></tbody>
         </table>
     </div>
@@ -224,7 +260,10 @@
             <div><label>Rego</label><input type="text" id="modal-rego" required></div>
             <div><label>Door Direction</label><input type="text" id="modal-doorDirection" required></div>
             <div></div>
-            <button type="submit">Add to On Site</button>
+            <div class="form-buttons">
+                <button type="submit">Add to On Site</button>
+                <button type="button" id="clear-onsite">Clear Form</button>
+            </div>
         </form>
         <table id="onsiteTable">
             <thead><tr><th>Release Number</th><th>Shipping Line</th><th>ISO</th><th>Grade</th><th>Carrier</th><th>Rego</th><th>Door Direction</th><th>Container Number</th><th>Actions</th></tr></thead>
@@ -332,7 +371,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
     location.reload();
 });
 
-// Public data app
+// App
 async function initApp() {
     const today = new Date().toISOString().split('T')[0];
     const todayFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -390,9 +429,20 @@ async function initApp() {
                 <td>${booking.grade}</td>
                 <td>${booking.carrier}</td>
                 <td style="text-align:center;"><input type="checkbox" ${booking.completed ? 'checked' : ''} disabled></td>
+                <td><button class="delete-btn" data-id="${booking.id}">×</button></td>
             `;
-            tr.addEventListener('click', () => moveBookingToOnsite(booking));
             tbody.appendChild(tr);
+        });
+
+        // Delete booking
+        document.querySelectorAll('#bookingsBody .delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                if (confirm('Are you sure you want to delete this booking?')) {
+                    supabaseClient.from('bookings').delete().eq('id', id).then(() => loadBookings());
+                }
+            });
         });
     }
 
@@ -405,7 +455,7 @@ async function initApp() {
         let currentRego = null;
         let groupColor = 1;
 
-        data.forEach((entry, index) => {
+        data.forEach(entry => {
             if (entry.rego !== currentRego) {
                 currentRego = entry.rego;
                 if (regoCount[entry.rego] > 1) groupColor = 3 - groupColor;
@@ -414,6 +464,7 @@ async function initApp() {
             const tr = document.createElement('tr');
             if (regoCount[entry.rego] > 1) tr.classList.add(`truck-group${groupColor}`);
 
+            const hasNumber = entry.container_number && entry.container_number.trim() !== '';
             tr.innerHTML = `
                 <td>${entry.release}</td>
                 <td>${entry.shippingline}</td>
@@ -423,19 +474,30 @@ async function initApp() {
                 <td>${entry.rego}</td>
                 <td>${entry.door_direction}</td>
                 <td><input type="text" value="${entry.container_number || ''}" data-id="${entry.id}" class="containerInput" style="width:100%;padding:5px;"></td>
-                <td><button class="completeBtn" data-id="${entry.id}" style="background:${entry.container_number ? '#dc3545' : '#ccc'};color:white;border:none;padding:5px 10px;border-radius:4px;" ${entry.container_number ? '' : 'disabled'}>Complete</button></td>
+                <td>
+                    <button class="completeBtn" data-id="${entry.id}" style="background:${hasNumber ? '#dc3545' : '#ccc'};" ${hasNumber ? '' : 'disabled'}>Complete</button>
+                    <button class="delete-btn" data-id="${entry.id}">×</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
 
+        // Container number input enables Complete button
         document.querySelectorAll('.containerInput').forEach(input => {
-            input.addEventListener('input', async (e) => {
-                const id = e.target.dataset.id;
+            input.addEventListener('input', (e) => {
                 const value = e.target.value.trim();
-                await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
+                const tr = e.target.closest('tr');
+                const btn = tr.querySelector('.completeBtn');
+                btn.disabled = value === '';
+                btn.style.background = value ? '#dc3545' : '#ccc';
+                // Save on blur or enter
+                if (e.type === 'blur' || e.key === 'Enter') {
+                    supabaseClient.from('onsite').update({ container_number: value }).eq('id', input.dataset.id);
+                }
             });
         });
 
+        // Complete
         document.querySelectorAll('.completeBtn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
@@ -450,6 +512,17 @@ async function initApp() {
                 await supabaseClient.from('onsite').delete().eq('id', id);
                 loadOnsite();
                 if (document.getElementById('history').classList.contains('active')) loadHistory();
+            });
+        });
+
+        // Delete onsite
+        document.querySelectorAll('#onsiteBody .delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.id;
+                if (confirm('Are you sure you want to delete this on-site container?')) {
+                    supabaseClient.from('onsite').delete().eq('id', id).then(() => loadOnsite());
+                }
             });
         });
     }
@@ -474,16 +547,6 @@ async function initApp() {
         });
     }
 
-    function moveBookingToOnsite(booking) {
-        document.querySelector('.tab[data-tab="onsite"]').click();
-        document.getElementById('modal-release').value = booking.release;
-        document.getElementById('modal-shippingline').value = booking.shippingline;
-        document.getElementById('modal-iso').value = booking.iso;
-        document.getElementById('modal-grade').value = booking.grade;
-        document.getElementById('modal-carrier').value = booking.carrier;
-        document.getElementById('modal-rego').focus();
-    }
-
     // Load functions (public data)
     async function loadBookings() {
         const { data } = await supabaseClient.from('bookings').select('*').eq('date', bookingsDate);
@@ -500,7 +563,16 @@ async function initApp() {
         renderHistoryTable(data || []);
     }
 
-    // Forms (public data)
+    // Clear form buttons
+    document.getElementById('clear-booking').addEventListener('click', () => {
+        document.getElementById('bookingForm').reset();
+    });
+
+    document.getElementById('clear-onsite').addEventListener('click', () => {
+        document.getElementById('onsiteForm').reset();
+    });
+
+    // Forms
     document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const newBooking = {
@@ -542,7 +614,7 @@ async function initApp() {
         loadBookings();
     });
 
-    // Real-time (public)
+    // Real-time
     supabaseClient
         .channel('public-bookings')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings())
