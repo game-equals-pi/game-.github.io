@@ -99,14 +99,10 @@
         .add-container-form input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .add-container-form button { grid-column: span 2; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         @media (max-width: 600px) { .add-container-form { grid-template-columns: 1fr; } .add-container-form button { grid-column: span 1; } }
-
-        /* Login */
         #login-page { padding: 50px; text-align: center; max-width: 400px; margin: 100px auto; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         #login-page input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
         #login-page button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         #logout-btn { position: absolute; right: 20px; top: 20px; background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; z-index: 1001; }
-
-        /* Settings dropdown */
         .settings-dropdown {
             display: none;
             position: absolute;
@@ -123,7 +119,6 @@
         .settings-item { padding: 14px 16px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 15px; }
         .settings-item:hover { background: #f0f0f0; }
         .settings-item:last-child { border-bottom: none; }
-
         /* Themes */
         body.dark { background: #121212; color: #e0e0e0; }
         body.dark .content, body.dark table { background: #1e1e1e; }
@@ -164,10 +159,10 @@
 </head>
 <body>
 
-<!-- Login Page -->
+<!-- Login Page (mandatory) -->
 <div id="login-page">
     <h1>Container Dashboard</h1>
-    <h2>Sign in / Sign up</h2>
+    <h2>Login required</h2>
     <input type="email" id="auth-email" placeholder="Email" required>
     <input type="password" id="auth-password" placeholder="Password" required>
     <button id="auth-btn">Login / Sign Up</button>
@@ -178,7 +173,7 @@
 <div id="dashboard" style="display:none;">
     <div class="tabs">
         <button class="settings-btn" id="settingsBtn">
-            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.92 0-.31-.02-.62-.06-.92l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.49.49 0 0 0-.5-.42h-3.84a.49.49 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22l-1.92 3.32c-.12.22-.07.47.12.61l2.03 1.58c-.04.3-.06.61-.06.92 0 .31.02.62.06.92l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.42.5.42h3.84c.26 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.07.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.92 0-.31-.02-.62-.06-.92l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.49.49 0 0 0-.5-.42h-3.84a.49.49 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22l-1.92 3.32c-.12.22-.07.47.12.61l2.03 1.58c-.04.3-.06.61-.06.92 0 .31.02.62.06.92l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l-.36 2.54c.05.24.24.42.5.42h3.84c.26 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.07.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
         </button>
         <div class="tab active" data-tab="bookings">Bookings</div>
         <div class="tab" data-tab="onsite">On Site</div>
@@ -195,6 +190,7 @@
         </div>
     </div>
 
+    <!-- Full dashboard content (same as before) -->
     <div id="bookings" class="content active">
         <h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
         <form id="bookingForm">
@@ -253,10 +249,22 @@ const supabaseClient = createClient(
   'sb_publishable_PWIgfu7AZifTuNM-3CNlHA_D7wqFB7s'
 );
 
-// Theme
-const savedTheme = localStorage.getItem('theme') || 'light';
-document.body.classList.add(savedTheme);
+let user = null;
 
+// Theme – saved per user
+function loadTheme() {
+    if (!user) return;
+    const saved = localStorage.getItem(`theme_${user.id}`) || 'light';
+    document.body.className = '';
+    document.body.classList.add(saved);
+}
+
+function saveTheme(theme) {
+    if (!user) return;
+    localStorage.setItem(`theme_${user.id}`, theme);
+}
+
+// Settings dropdown
 document.getElementById('settingsBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('settingsDropdown').classList.toggle('active');
@@ -271,240 +279,289 @@ document.querySelectorAll('.settings-item').forEach(item => {
         const theme = item.dataset.theme;
         document.body.className = '';
         document.body.classList.add(theme);
-        localStorage.setItem('theme', theme);
+        saveTheme(theme);
     });
 });
 
-// Public data – no login required for data
-const today = new Date().toISOString().split('T')[0];
-const todayFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
+// Auth – mandatory
+document.getElementById('auth-btn').addEventListener('click', async () => {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const message = document.getElementById('auth-message');
 
-let bookingsDate = today;
-let historyDate = today;
-
-document.getElementById('bookingsDate').value = today;
-document.getElementById('historyDate').value = today;
-
-// Tab switching
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.tab).classList.add('active');
-
-        if (tab.dataset.tab === 'bookings') {
-            bookingsDate = today;
-            document.getElementById('bookingsDate').value = today;
-            loadBookings();
-        } else if (tab.dataset.tab === 'history') {
-            historyDate = today;
-            document.getElementById('historyDate').value = today;
-            loadHistory();
-        } else if (tab.dataset.tab === 'onsite') {
-            loadOnsite();
-        }
-    });
-});
-
-document.getElementById('bookingsDate').addEventListener('change', (e) => {
-    bookingsDate = e.target.value;
-    loadBookings();
-});
-
-document.getElementById('historyDate').addEventListener('change', (e) => {
-    historyDate = e.target.value;
-    loadHistory();
-});
-
-// Render functions
-function renderBookingsTable(data) {
-    const tbody = document.getElementById('bookingsBody');
-    tbody.innerHTML = '';
-    data.forEach(booking => {
-        const tr = document.createElement('tr');
-        if (booking.completed) tr.classList.add('completed-row');
-        tr.innerHTML = `
-            <td>${booking.release}</td>
-            <td>${booking.shippingline}</td>
-            <td>${booking.iso}</td>
-            <td>${booking.grade}</td>
-            <td>${booking.carrier}</td>
-            <td style="text-align:center;"><input type="checkbox" ${booking.completed ? 'checked' : ''} disabled></td>
-        `;
-        tr.addEventListener('click', () => moveBookingToOnsite(booking));
-        tbody.appendChild(tr);
-    });
-}
-
-function renderOnsiteTable(data) {
-    const tbody = document.getElementById('onsiteBody');
-    tbody.innerHTML = '';
-    const regoCount = {};
-    data.forEach(entry => regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1);
-
-    let currentRego = null;
-    let groupColor = 1;
-
-    data.forEach((entry, index) => {
-        if (entry.rego !== currentRego) {
-            currentRego = entry.rego;
-            if (regoCount[entry.rego] > 1) groupColor = 3 - groupColor;
-        }
-
-        const tr = document.createElement('tr');
-        if (regoCount[entry.rego] > 1) tr.classList.add(`truck-group${groupColor}`);
-
-        tr.innerHTML = `
-            <td>${entry.release}</td>
-            <td>${entry.shippingline}</td>
-            <td>${entry.iso}</td>
-            <td>${entry.grade}</td>
-            <td>${entry.carrier}</td>
-            <td>${entry.rego}</td>
-            <td>${entry.door_direction}</td>
-            <td><input type="text" value="${entry.container_number || ''}" data-id="${entry.id}" class="containerInput" style="width:100%;padding:5px;"></td>
-            <td><button class="completeBtn" data-id="${entry.id}" style="background:${entry.container_number ? '#dc3545' : '#ccc'};color:white;border:none;padding:5px 10px;border-radius:4px;" ${entry.container_number ? '' : 'disabled'}>Complete</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    document.querySelectorAll('.containerInput').forEach(input => {
-        input.addEventListener('input', async (e) => {
-            const id = e.target.dataset.id;
-            const value = e.target.value.trim();
-            await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
-        });
-    });
-
-    document.querySelectorAll('.completeBtn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const id = btn.dataset.id;
-            const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
-
-            await supabaseClient.from('history').insert({
-                ...entry,
-                completed_at: new Date().toLocaleString(),
-                completed_date: today
-            });
-
-            await supabaseClient.from('onsite').delete().eq('id', id);
-            loadOnsite();
-            if (document.getElementById('history').classList.contains('active')) loadHistory();
-        });
-    });
-}
-
-function renderHistoryTable(data) {
-    const tbody = document.getElementById('historyBody');
-    tbody.innerHTML = '';
-    data.forEach(entry => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${entry.release}</td>
-            <td>${entry.shippingline}</td>
-            <td>${entry.iso}</td>
-            <td>${entry.grade}</td>
-            <td>${entry.carrier}</td>
-            <td>${entry.rego}</td>
-            <td>${entry.door_direction}</td>
-            <td>${entry.container_number || ''}</td>
-            <td>${entry.completed_at || ''}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-function moveBookingToOnsite(booking) {
-    document.querySelector('.tab[data-tab="onsite"]').click();
-    document.getElementById('modal-release').value = booking.release;
-    document.getElementById('modal-shippingline').value = booking.shippingline;
-    document.getElementById('modal-iso').value = booking.iso;
-    document.getElementById('modal-grade').value = booking.grade;
-    document.getElementById('modal-carrier').value = booking.carrier;
-    document.getElementById('modal-rego').focus();
-}
-
-// Load functions (public data)
-async function loadBookings() {
-    const { data } = await supabaseClient.from('bookings').select('*').eq('date', bookingsDate);
-    renderBookingsTable(data || []);
-}
-
-async function loadOnsite() {
-    const { data } = await supabaseClient.from('onsite').select('*');
-    renderOnsiteTable(data || []);
-}
-
-async function loadHistory() {
-    const { data } = await supabaseClient.from('history').select('*').eq('completed_date', historyDate);
-    renderHistoryTable(data || []);
-}
-
-// Forms (public data – no user_id)
-document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const newBooking = {
-        date: bookingsDate,
-        release: document.getElementById('booking-release').value.trim().toUpperCase(),
-        shippingline: document.getElementById('booking-shippingline').value.trim().toUpperCase(),
-        iso: document.getElementById('booking-iso').value.trim().toUpperCase(),
-        grade: document.getElementById('booking-grade').value.trim().toUpperCase(),
-        carrier: document.getElementById('booking-carrier').value.trim().toUpperCase(),
-        completed: false
-    };
-    await supabaseClient.from('bookings').insert(newBooking);
-    e.target.reset();
-    loadBookings();
-});
-
-document.getElementById('onsiteForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const release = document.getElementById('modal-release').value.trim().toUpperCase();
-    const newEntry = {
-        release,
-        shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
-        iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
-        grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
-        carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
-        rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
-        door_direction: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
-        container_number: ''
-    };
-    await supabaseClient.from('onsite').insert(newEntry);
-
-    const { data: match } = await supabaseClient.from('bookings').select('id').eq('release', release).eq('date', today).eq('completed', false).limit(1);
-    if (match && match.length > 0) {
-        await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
+    if (!email || !password) {
+        message.textContent = 'Fill in email and password';
+        return;
     }
 
-    e.target.reset();
-    loadOnsite();
-    loadBookings();
+    message.textContent = 'Loading...';
+
+    let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error && error.message === 'Invalid login credentials') {
+        ({ data, error } = await supabaseClient.auth.signUp({ email, password }));
+        if (!error) {
+            message.textContent = 'Check your email for confirmation link!';
+            return;
+        }
+    }
+
+    if (error) {
+        message.textContent = error.message;
+    } else {
+        user = data.user;
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadTheme();
+        initApp();
+    }
 });
 
-// Real-time (public)
-supabaseClient
-    .channel('public-bookings')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings())
-    .subscribe();
+supabaseClient.auth.getSession().then(({ data }) => {
+    if (data.session) {
+        user = data.session.user;
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadTheme();
+        initApp();
+    }
+});
 
-supabaseClient
-    .channel('public-onsite')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite())
-    .subscribe();
+document.getElementById('logout-btn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    location.reload();
+});
 
-supabaseClient
-    .channel('public-history')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory())
-    .subscribe();
+// Public data app
+async function initApp() {
+    const today = new Date().toISOString().split('T')[0];
+    const todayFull = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
 
-// Initial load
-loadBookings();
-loadOnsite();
+    let bookingsDate = today;
+    let historyDate = today;
 
-// Optional: keep login if you want themes to persist per user, or remove login page entirely for fully public
+    document.getElementById('bookingsDate').value = today;
+    document.getElementById('historyDate').value = today;
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+
+            if (tab.dataset.tab === 'bookings') {
+                bookingsDate = today;
+                document.getElementById('bookingsDate').value = today;
+                loadBookings();
+            } else if (tab.dataset.tab === 'history') {
+                historyDate = today;
+                document.getElementById('historyDate').value = today;
+                loadHistory();
+            } else if (tab.dataset.tab === 'onsite') {
+                loadOnsite();
+            }
+        });
+    });
+
+    document.getElementById('bookingsDate').addEventListener('change', (e) => {
+        bookingsDate = e.target.value;
+        loadBookings();
+    });
+
+    document.getElementById('historyDate').addEventListener('change', (e) => {
+        historyDate = e.target.value;
+        loadHistory();
+    });
+
+    // Render functions
+    function renderBookingsTable(data) {
+        const tbody = document.getElementById('bookingsBody');
+        tbody.innerHTML = '';
+        data.forEach(booking => {
+            const tr = document.createElement('tr');
+            if (booking.completed) tr.classList.add('completed-row');
+            tr.innerHTML = `
+                <td>${booking.release}</td>
+                <td>${booking.shippingline}</td>
+                <td>${booking.iso}</td>
+                <td>${booking.grade}</td>
+                <td>${booking.carrier}</td>
+                <td style="text-align:center;"><input type="checkbox" ${booking.completed ? 'checked' : ''} disabled></td>
+            `;
+            tr.addEventListener('click', () => moveBookingToOnsite(booking));
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderOnsiteTable(data) {
+        const tbody = document.getElementById('onsiteBody');
+        tbody.innerHTML = '';
+        const regoCount = {};
+        data.forEach(entry => regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1);
+
+        let currentRego = null;
+        let groupColor = 1;
+
+        data.forEach((entry, index) => {
+            if (entry.rego !== currentRego) {
+                currentRego = entry.rego;
+                if (regoCount[entry.rego] > 1) groupColor = 3 - groupColor;
+            }
+
+            const tr = document.createElement('tr');
+            if (regoCount[entry.rego] > 1) tr.classList.add(`truck-group${groupColor}`);
+
+            tr.innerHTML = `
+                <td>${entry.release}</td>
+                <td>${entry.shippingline}</td>
+                <td>${entry.iso}</td>
+                <td>${entry.grade}</td>
+                <td>${entry.carrier}</td>
+                <td>${entry.rego}</td>
+                <td>${entry.door_direction}</td>
+                <td><input type="text" value="${entry.container_number || ''}" data-id="${entry.id}" class="containerInput" style="width:100%;padding:5px;"></td>
+                <td><button class="completeBtn" data-id="${entry.id}" style="background:${entry.container_number ? '#dc3545' : '#ccc'};color:white;border:none;padding:5px 10px;border-radius:4px;" ${entry.container_number ? '' : 'disabled'}>Complete</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.querySelectorAll('.containerInput').forEach(input => {
+            input.addEventListener('input', async (e) => {
+                const id = e.target.dataset.id;
+                const value = e.target.value.trim();
+                await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
+            });
+        });
+
+        document.querySelectorAll('.completeBtn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
+                const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
+
+                await supabaseClient.from('history').insert({
+                    ...entry,
+                    completed_at: new Date().toLocaleString(),
+                    completed_date: today
+                });
+
+                await supabaseClient.from('onsite').delete().eq('id', id);
+                loadOnsite();
+                if (document.getElementById('history').classList.contains('active')) loadHistory();
+            });
+        });
+    }
+
+    function renderHistoryTable(data) {
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = '';
+        data.forEach(entry => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${entry.release}</td>
+                <td>${entry.shippingline}</td>
+                <td>${entry.iso}</td>
+                <td>${entry.grade}</td>
+                <td>${entry.carrier}</td>
+                <td>${entry.rego}</td>
+                <td>${entry.door_direction}</td>
+                <td>${entry.container_number || ''}</td>
+                <td>${entry.completed_at || ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function moveBookingToOnsite(booking) {
+        document.querySelector('.tab[data-tab="onsite"]').click();
+        document.getElementById('modal-release').value = booking.release;
+        document.getElementById('modal-shippingline').value = booking.shippingline;
+        document.getElementById('modal-iso').value = booking.iso;
+        document.getElementById('modal-grade').value = booking.grade;
+        document.getElementById('modal-carrier').value = booking.carrier;
+        document.getElementById('modal-rego').focus();
+    }
+
+    // Load functions (public data)
+    async function loadBookings() {
+        const { data } = await supabaseClient.from('bookings').select('*').eq('date', bookingsDate);
+        renderBookingsTable(data || []);
+    }
+
+    async function loadOnsite() {
+        const { data } = await supabaseClient.from('onsite').select('*');
+        renderOnsiteTable(data || []);
+    }
+
+    async function loadHistory() {
+        const { data } = await supabaseClient.from('history').select('*').eq('completed_date', historyDate);
+        renderHistoryTable(data || []);
+    }
+
+    // Forms (public data)
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const newBooking = {
+            date: bookingsDate,
+            release: document.getElementById('booking-release').value.trim().toUpperCase(),
+            shippingline: document.getElementById('booking-shippingline').value.trim().toUpperCase(),
+            iso: document.getElementById('booking-iso').value.trim().toUpperCase(),
+            grade: document.getElementById('booking-grade').value.trim().toUpperCase(),
+            carrier: document.getElementById('booking-carrier').value.trim().toUpperCase(),
+            completed: false
+        };
+        await supabaseClient.from('bookings').insert(newBooking);
+        e.target.reset();
+        loadBookings();
+    });
+
+    document.getElementById('onsiteForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const release = document.getElementById('modal-release').value.trim().toUpperCase();
+        const newEntry = {
+            release,
+            shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
+            iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
+            grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
+            carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
+            rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
+            door_direction: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
+            container_number: ''
+        };
+        await supabaseClient.from('onsite').insert(newEntry);
+
+        const { data: match } = await supabaseClient.from('bookings').select('id').eq('release', release).eq('date', today).eq('completed', false).limit(1);
+        if (match && match.length > 0) {
+            await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
+        }
+
+        e.target.reset();
+        loadOnsite();
+        loadBookings();
+    });
+
+    // Real-time (public)
+    supabaseClient
+        .channel('public-bookings')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings())
+        .subscribe();
+
+    supabaseClient
+        .channel('public-onsite')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite())
+        .subscribe();
+
+    supabaseClient
+        .channel('public-history')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory())
+        .subscribe();
+
+    // Initial load
+    loadBookings();
+    loadOnsite();
+}
 </script>
 </body>
 </html>
