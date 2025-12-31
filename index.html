@@ -189,7 +189,7 @@
 </head>
 <body>
 
-<!-- Login Page -->
+<!-- Login Page (mandatory) -->
 <div id="login-page">
     <h1>Container Dashboard</h1>
     <h2>Login required</h2>
@@ -289,6 +289,7 @@ const supabaseClient = createClient(
 );
 
 let user = null;
+let hideCompleted = false;
 
 // Theme – saved per user
 function loadTheme() {
@@ -415,13 +416,22 @@ async function initApp() {
         loadHistory();
     });
 
+    // Hide Completed toggle
+    document.getElementById('toggleCompleted').addEventListener('click', (e) => {
+        hideCompleted = !hideCompleted;
+        e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
+        e.target.style.background = hideCompleted ? '#dc3545' : '#555';
+        loadBookings();
+    });
+
     // Render functions
     function renderBookingsTable(data) {
-        // Sort by carrier alphabetically
         data.sort((a, b) => a.carrier.toUpperCase().localeCompare(b.carrier.toUpperCase()));
         const tbody = document.getElementById('bookingsBody');
         tbody.innerHTML = '';
         data.forEach(booking => {
+            if (hideCompleted && booking.completed) return;
+
             const tr = document.createElement('tr');
             if (booking.completed) tr.classList.add('completed-row');
             tr.innerHTML = `
