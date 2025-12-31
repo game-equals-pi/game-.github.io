@@ -259,6 +259,7 @@ let user = null;
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.body.classList.add(savedTheme);
 
+// Settings dropdown
 document.getElementById('settingsBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('settingsDropdown').classList.toggle('active');
@@ -277,7 +278,7 @@ document.querySelectorAll('.settings-item').forEach(item => {
     });
 });
 
-// Auth (same as before)
+// Auth
 document.getElementById('auth-btn').addEventListener('click', async () => {
     const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
@@ -368,36 +369,7 @@ async function initApp() {
         loadHistory();
     });
 
-    // Load and real-time
-    async function loadBookings() {
-        const { data } = await supabaseClient
-            .from('bookings')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('date', bookingsDate);
-
-        renderBookingsTable(data);
-    }
-
-    async function loadOnsite() {
-        const { data } = await supabaseClient
-            .from('onsite')
-            .select('*')
-            .eq('user_id', user.id);
-
-        renderOnsiteTable(data);
-    }
-
-    async function loadHistory() {
-        const { data } = await supabaseClient
-            .from('history')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('completed_date', historyDate);
-
-        renderHistoryTable(data);
-    }
-
+    // Render functions
     function renderBookingsTable(data) {
         const tbody = document.getElementById('bookingsBody');
         tbody.innerHTML = '';
@@ -449,16 +421,14 @@ async function initApp() {
             tbody.appendChild(tr);
         });
 
-        // Real-time container number update
         document.querySelectorAll('.containerInput').forEach(input => {
             input.addEventListener('input', async (e) => {
                 const id = e.target.dataset.id;
                 const value = e.target.value.trim();
-                await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id).eq('user_id', user.id);
+                await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
             });
         });
 
-        // Complete
         document.querySelectorAll('.completeBtn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
@@ -471,7 +441,8 @@ async function initApp() {
                     completed_date: today
                 });
 
-                await supabaseClient.from('onsite').delete().eq('id', id).eq('user_id', user.id);
+                await supabaseClient.from('onsite').delete().eq('id', id);
+                loadOnsite();
             });
         });
     }
@@ -506,6 +477,36 @@ async function initApp() {
         document.getElementById('modal-rego').focus();
     }
 
+    // Load functions
+    async function loadBookings() {
+        const { data } = await supabaseClient
+            .from('bookings')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('date', bookingsDate);
+
+        renderBookingsTable(data || []);
+    }
+
+    async function loadOnsite() {
+        const { data } = await supabaseClient
+            .from('onsite')
+            .select('*')
+            .eq('user_id', user.id);
+
+        renderOnsiteTable(data || []);
+    }
+
+    async function loadHistory() {
+        const { data } = await supabaseClient
+            .from('history')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('completed_date', historyDate);
+
+        renderHistoryTable(data || []);
+    }
+
     // Forms
     document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -521,7 +522,7 @@ async function initApp() {
         };
         await supabaseClient.from('bookings').insert(newBooking);
         e.target.reset();
-        // No need to call loadBookings() – real-time will handle it
+        loadBookings(); // fallback in case real-time fails
     });
 
     document.getElementById('onsiteForm').addEventListener('submit', async (e) => {
@@ -540,34 +541,42 @@ async function initApp() {
         };
         await supabaseClient.from('onsite').insert(newEntry);
 
-        // Mark matching booking complete
-        const { data: match } = await supabaseClient.from('bookings').select('id').eq('user_id', user.id).eq('release', release).eq('date', today).eq('completed', false).limit(1);
+        const { data: match } = await supabaseClient
+            .from('bookings')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('release', release)
+            .eq('date', today)
+            .eq('completed', false)
+            .limit(1);
+
         if (match && match.length > 0) {
             await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
         }
 
         e.target.reset();
-        // Real-time will refresh
+        loadOnsite();
+        loadBookings();
     });
 
-    // Real-time subscriptions
-    supabaseClient
-        .channel('public:bookings')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `user_id=eq.${user.id}` }, payload => {
+    // Real-time – wait for user, then subscribe
+    const bookingsChannel = supabaseClient
+        .channel('bookings-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `user_id=eq.${user.id}` }, () => {
             if (document.getElementById('bookings').classList.contains('active')) loadBookings();
         })
         .subscribe();
 
-    supabaseClient
-        .channel('public:onsite')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'onsite', filter: `user_id=eq.${user.id}` }, payload => {
+    const onsiteChannel = supabaseClient
+        .channel('onsite-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'onsite', filter: `user_id=eq.${user.id}` }, () => {
             if (document.getElementById('onsite').classList.contains('active')) loadOnsite();
         })
         .subscribe();
 
-    supabaseClient
-        .channel('public:history')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'history', filter: `user_id=eq.${user.id}` }, payload => {
+    const historyChannel = supabaseClient
+        .channel('history-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'history', filter: `user_id=eq.${user.id}` }, () => {
             if (document.getElementById('history').classList.contains('active')) loadHistory();
         })
         .subscribe();
