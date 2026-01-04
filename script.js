@@ -191,40 +191,56 @@ async function initApp() {
     }
 
     function renderOnsiteTable(data) {
-        const tbody = document.getElementById('onsiteBody');
-        tbody.innerHTML = '';
-        const regoCount = {};
-        data.forEach(entry => regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1);
+    // Keep the exact order from DB (chronological – newest at bottom)
+    // Do NOT sort here!
 
-        let currentRego = null;
-        let groupColor = 1;
+    const tbody = document.getElementById('onsiteBody');
+    tbody.innerHTML = '';
 
-        data.forEach(entry => {
-            if (entry.rego !== currentRego) {
-                currentRego = entry.rego;
-                if (regoCount[entry.rego] > 1) groupColor = 3 - groupColor;
+    // Count current regos for grouping
+    const regoCount = {};
+    data.forEach(entry => {
+        regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1;
+    });
+
+    // Track color alternation per rego group
+    const regoColorMap = {}; // rego → color (1 or 2)
+    let currentGroupColor = 1;
+
+    data.forEach(entry => {
+        // Start new group if rego changes
+        if (!regoColorMap[entry.rego]) {
+            if (regoCount[entry.rego] > 1) {
+                currentGroupColor = currentGroupColor === 1 ? 2 : 1;
             }
+            regoColorMap[entry.rego] = currentGroupColor;
+        }
 
-            const tr = document.createElement('tr');
-            if (regoCount[entry.rego] > 1) tr.classList.add(`truck-group${groupColor}`);
+        const tr = document.createElement('tr');
+        if (regoCount[entry.rego] > 1) {
+            tr.classList.add(`truck-group${regoColorMap[entry.rego]}`);
+        }
 
-            const hasNumber = entry.container_number && entry.container_number.trim() !== '';
-            tr.innerHTML = `
-                <td>${entry.release}</td>
-                <td>${entry.shippingline}</td>
-                <td>${entry.iso}</td>
-                <td>${entry.grade}</td>
-                <td>${entry.carrier}</td>
-                <td>${entry.rego}</td>
-                <td>${entry.door_direction}</td>
-                <td><input type="text" value="${entry.container_number || ''}" data-id="${entry.id}" class="containerInput" style="width:100%;padding:5px;"></td>
-                <td>
-                    <button class="completeBtn" data-id="${entry.id}" style="background:${hasNumber ? '#dc3545' : '#ccc'};" ${hasNumber ? '' : 'disabled'}>Complete</button>
-                    <button class="delete-btn" data-id="${entry.id}">×</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        const hasNumber = entry.container_number && entry.container_number.trim() !== '';
+        tr.innerHTML = `
+            <td>${entry.release}</td>
+            <td>${entry.shippingline}</td>
+            <td>${entry.iso}</td>
+            <td>${entry.grade}</td>
+            <td>${entry.carrier}</td>
+            <td>${entry.rego}</td>
+            <td>${entry.door_direction}</td>
+            <td><input type="text" value="${entry.container_number || ''}" data-id="${entry.id}" class="containerInput" style="width:100%;padding:5px;"></td>
+            <td>
+                <button class="completeBtn" data-id="${entry.id}" style="background:${hasNumber ? '#dc3545' : '#ccc'};" ${hasNumber ? '' : 'disabled'}>Complete</button>
+                <button class="delete-btn" data-id="${entry.id}">×</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // ... keep your existing event listeners for containerInput, completeBtn, delete-btn exactly as they are ...
+}
 
         document.querySelectorAll('.containerInput').forEach(input => {
     // Live enable/disable Complete button
