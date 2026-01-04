@@ -8,9 +8,8 @@ const supabaseClient = createClient(
 let user = null;
 let hideCompleted = false;
 
-// Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Theme functions
+    // Theme – saved per user
     function loadTheme() {
         if (!user) return;
         const saved = localStorage.getItem(`theme_${user.id}`) || 'light';
@@ -76,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Check for existing session
     supabaseClient.auth.getSession().then(({ data }) => {
         if (data.session) {
             user = data.session.user;
@@ -92,359 +90,332 @@ document.addEventListener('DOMContentLoaded', () => {
         location.reload();
     });
 
-    // Now call initApp() for non-logged-in parts or after login
+    // Full app logic
     async function initApp() {
-        // ... keep your entire existing initApp() function here unchanged ...
-    }
-});
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+        const todayFull = new Date().toLocaleDateString('en-US', { timeZone: 'Pacific/Auckland', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
 
-// App
-async function initApp() {
-  
-    const today = new Date().toLocaleDateString('en-CA', {timeZone: 'Pacific/Auckland'});
-    const todayFull = new Date().toLocaleDateString('en-US', { timeZone: 'Pacific/Auckland', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
+        let bookingsDate = today;
+        let historyDate = today;
 
-    let bookingsDate = todayFull;
-    let historyDate = today;
+        document.getElementById('bookingsDate').value = today;
+        document.getElementById('historyDate').value = today;
 
-    document.getElementById('bookingsDate').value = today;
-    document.getElementById('historyDate').value = today;
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
 
-    // Tab switching
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(tab.dataset.tab).classList.add('active');
-
-            if (tab.dataset.tab === 'bookings') {
-                bookingsDate = today;
+                // Reset date pickers to today on tab switch
                 document.getElementById('bookingsDate').value = today;
-                loadBookings();
-            } else if (tab.dataset.tab === 'history') {
-                historyDate = today;
                 document.getElementById('historyDate').value = today;
-                loadHistory();
-            } else if (tab.dataset.tab === 'onsite') {
-                loadOnsite();
+                bookingsDate = today;
+                historyDate = today;
+
+                if (tab.dataset.tab === 'bookings') {
+                    loadBookings();
+                } else if (tab.dataset.tab === 'history') {
+                    loadHistory();
+                } else if (tab.dataset.tab === 'onsite') {
+                    loadOnsite();
+                }
+            });
+        });
+
+        document.getElementById('bookingsDate').addEventListener('change', (e) => {
+            bookingsDate = e.target.value;
+            loadBookings();
+        });
+
+        document.getElementById('historyDate').addEventListener('change', (e) => {
+            historyDate = e.target.value;
+            loadHistory();
+        });
+
+        // Hide Completed toggle
+        document.getElementById('toggleCompleted').addEventListener('click', (e) => {
+            hideCompleted = !hideCompleted;
+            e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
+            e.target.style.background = hideCompleted ? '#dc3545' : '#555';
+            loadBookings();
+        });
+
+        // Render functions
+        function renderBookingsTable(data) {
+            data.sort((a, b) => {
+                const carrierA = a.carrier.toUpperCase();
+                const carrierB = b.carrier.toUpperCase();
+                if (carrierA !== carrierB) return carrierA.localeCompare(carrierB);
+                const releaseA = a.release.toUpperCase();
+                const releaseB = b.release.toUpperCase();
+                return releaseA.localeCompare(releaseB);
+            });
+
+            const tbody = document.getElementById('bookingsBody');
+            tbody.innerHTML = '';
+            data.forEach(booking => {
+                if (hideCompleted && booking.completed) return;
+
+                const tr = document.createElement('tr');
+                if (booking.completed) tr.classList.add('completed-row');
+                tr.innerHTML = `
+                    <td>${booking.release}</td>
+                    <td>${booking.shippingline}</td>
+                    <td>${booking.iso}</td>
+                    <td>${booking.grade}</td>
+                    <td>${booking.carrier}</td>
+                    <td style="text-align:center;"><input type="checkbox" ${booking.completed ? 'checked' : ''} disabled></td>
+                    <td><button class="delete-btn" data-id="${booking.id}">×</button></td>
+                `;
+                tr.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('delete-btn')) {
+                        moveBookingToOnsite(booking);
+                    }
+                });
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('#bookingsBody .delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    if (confirm('Are you sure you want to delete this booking?')) {
+                        supabaseClient.from('bookings').delete().eq('id', id).then(() => loadBookings());
+                    }
+                });
+            });
+        }
+
+        function renderOnsiteTable(data) {
+            // Preserve chronological order (no sorting)
+            const tbody = document.getElementById('onsiteBody');
+            tbody.innerHTML = '';
+
+            const regoCount = {};
+            data.forEach(entry => regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1);
+
+            const regoColorMap = {};
+            let currentGroupColor = 1;
+
+            data.forEach(entry => {
+                if (!regoColorMap[entry.rego]) {
+                    if (regoCount[entry.rego] > 1) {
+                        currentGroupColor = currentGroupColor === 1 ? 2 : 1;
+                    }
+                    regoColorMap[entry.rego] = currentGroupColor;
+                }
+
+                const tr = document.createElement('tr');
+                if (regoCount[entry.rego] > 1) {
+                    tr.classList.add(`truck-group${regoColorMap[entry.rego]}`);
+                }
+
+                const hasNumber = entry.container_number && entry.container_number.trim() !== '';
+                tr.innerHTML = `
+                    <td>${entry.release}</td>
+                    <td>${entry.shippingline}</td>
+                    <td>${entry.iso}</td>
+                    <td>${entry.grade}</td>
+                    <td>${entry.carrier}</td>
+                    <td>${entry.rego}</td>
+                    <td>${entry.door_direction}</td>
+                    <td><input type="text" value="${entry.container_number || ''}" data-id="${entry.id}" class="containerInput" style="width:100%;padding:5px;"></td>
+                    <td>
+                        <button class="completeBtn" data-id="${entry.id}" style="background:${hasNumber ? '#dc3545' : '#ccc'};" ${hasNumber ? '' : 'disabled'}>Complete</button>
+                        <button class="delete-btn" data-id="${entry.id}">×</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.containerInput').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const value = e.target.value.trim();
+                    const tr = e.target.closest('tr');
+                    const btn = tr.querySelector('.completeBtn');
+                    btn.disabled = value === '';
+                    btn.style.background = value ? '#dc3545' : '#ccc';
+                });
+                input.addEventListener('blur', saveContainerNumber);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveContainerNumber.call(input);
+                    }
+                });
+            });
+
+            async function saveContainerNumber() {
+                const id = this.dataset.id;
+                const value = this.value.trim();
+                await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
+            }
+
+            document.querySelectorAll('.completeBtn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const tr = btn.closest('tr');
+                    const input = tr.querySelector('.containerInput');
+                    const id = btn.dataset.id;
+
+                    const currentValue = input.value.trim();
+                    if (currentValue) {
+                        await supabaseClient.from('onsite').update({ container_number: currentValue }).eq('id', id);
+                    }
+
+                    const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
+
+                    await supabaseClient.from('history').insert({
+                        ...entry,
+                        completed_at: new Date().toLocaleString(),
+                        completed_date: today
+                    });
+
+                    await supabaseClient.from('onsite').delete().eq('id', id);
+                    loadOnsite();
+                    if (document.getElementById('history').classList.contains('active')) loadHistory();
+                });
+            });
+
+            document.querySelectorAll('#onsiteBody .delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    if (confirm('Are you sure you want to delete this on-site container?')) {
+                        supabaseClient.from('onsite').delete().eq('id', id).then(() => loadOnsite());
+                    }
+                });
+            });
+        }
+
+        function renderHistoryTable(data) {
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = '';
+            data.forEach(entry => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${entry.release}</td>
+                    <td>${entry.shippingline}</td>
+                    <td>${entry.iso}</td>
+                    <td>${entry.grade}</td>
+                    <td>${entry.carrier}</td>
+                    <td>${entry.rego}</td>
+                    <td>${entry.door_direction}</td>
+                    <td>${entry.container_number || ''}</td>
+                    <td>${entry.completed_at || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function moveBookingToOnsite(booking) {
+            document.querySelector('.tab[data-tab="onsite"]').click();
+            document.getElementById('modal-release').value = booking.release;
+            document.getElementById('modal-shippingline').value = booking.shippingline;
+            document.getElementById('modal-iso').value = booking.iso;
+            document.getElementById('modal-grade').value = booking.grade;
+            document.getElementById('modal-carrier').value = booking.carrier;
+            document.getElementById('modal-rego').focus();
+        }
+
+        document.getElementById('modal-release').addEventListener('blur', async () => {
+            const rel = document.getElementById('modal-release').value.trim().toUpperCase();
+            if (!rel) return;
+
+            const { data } = await supabaseClient.from('bookings').select('*').eq('release', rel).eq('date', today).eq('completed', false).limit(1);
+            if (data && data.length > 0) {
+                const b = data[0];
+                document.getElementById('modal-shippingline').value = b.shippingline;
+                document.getElementById('modal-iso').value = b.iso;
+                document.getElementById('modal-grade').value = b.grade;
+                document.getElementById('modal-carrier').value = b.carrier;
             }
         });
-    });
 
-    document.getElementById('bookingsDate').addEventListener('change', (e) => {
-        bookingsDate = e.target.value;
-        loadBookings();
-    });
+        async function loadBookings() {
+            const { data } = await supabaseClient.from('bookings').select('*').eq('date', bookingsDate);
+            renderBookingsTable(data || []);
+        }
 
-    document.getElementById('historyDate').addEventListener('change', (e) => {
-        historyDate = e.target.value;
-        loadHistory();
-    });
+        async function loadOnsite() {
+            const { data } = await supabaseClient.from('onsite').select('*');
+            renderOnsiteTable(data || []);
+        }
 
-    // Hide Completed toggle
-    document.getElementById('toggleCompleted').addEventListener('click', (e) => {
-        hideCompleted = !hideCompleted;
-        e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
-        e.target.style.background = hideCompleted ? '#dc3545' : '#555';
-        loadBookings();
-    });
+        async function loadHistory() {
+            const { data } = await supabaseClient.from('history').select('*').eq('completed_date', historyDate);
+            renderHistoryTable(data || []);
+        }
 
-    // Render functions
-    function renderBookingsTable(data) {
-      data.sort((a, b) => {
-    const carrierA = a.carrier.toUpperCase();
-    const carrierB = b.carrier.toUpperCase();
-    if (carrierA !== carrierB) {
-        return carrierA.localeCompare(carrierB);
-    }
-    // If carriers are the same, sort by release number
-    const releaseA = a.release.toUpperCase();
-    const releaseB = b.release.toUpperCase();
-    return releaseA.localeCompare(releaseB);
-});
-        const tbody = document.getElementById('bookingsBody');
-        tbody.innerHTML = '';
-        data.forEach(booking => {
-            if (hideCompleted && booking.completed) return;
-
-            const tr = document.createElement('tr');
-            if (booking.completed) tr.classList.add('completed-row');
-            tr.innerHTML = `
-                <td>${booking.release}</td>
-                <td>${booking.shippingline}</td>
-                <td>${booking.iso}</td>
-                <td>${booking.grade}</td>
-                <td>${booking.carrier}</td>
-                <td style="text-align:center;"><input type="checkbox" ${booking.completed ? 'checked' : ''} disabled></td>
-                <td><button class="delete-btn" data-id="${booking.id}">×</button></td>
-            `;
-            tr.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('delete-btn')) {
-                    moveBookingToOnsite(booking);
-                }
-            });
-            tbody.appendChild(tr);
+        document.getElementById('clear-booking').addEventListener('click', () => {
+            document.getElementById('bookingForm').reset();
         });
 
-        document.querySelectorAll('#bookingsBody .delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const id = btn.dataset.id;
-                if (confirm('Are you sure you want to delete this booking?')) {
-                    supabaseClient.from('bookings').delete().eq('id', id).then(() => loadBookings());
-                }
-            });
+        document.getElementById('clear-onsite').addEventListener('click', () => {
+            document.getElementById('onsiteForm').reset();
         });
-    }
 
-    function renderOnsiteTable(data) {
-    // Keep the exact order from DB (chronological – newest at bottom)
-    // Do NOT sort here!
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newBooking = {
+                date: bookingsDate,
+                release: document.getElementById('booking-release').value.trim().toUpperCase(),
+                shippingline: document.getElementById('booking-shippingline').value.trim().toUpperCase(),
+                iso: document.getElementById('booking-iso').value.trim().toUpperCase(),
+                grade: document.getElementById('booking-grade').value.trim().toUpperCase(),
+                carrier: document.getElementById('booking-carrier').value.trim().toUpperCase(),
+                completed: false
+            };
+            await supabaseClient.from('bookings').insert(newBooking);
+            e.target.reset();
+            loadBookings();
+        });
 
-    const tbody = document.getElementById('onsiteBody');
-    tbody.innerHTML = '';
+        document.getElementById('onsiteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const release = document.getElementById('modal-release').value.trim().toUpperCase();
+            const newEntry = {
+                release,
+                shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
+                iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
+                grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
+                carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
+                rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
+                door_direction: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
+                container_number: ''
+            };
+            await supabaseClient.from('onsite').insert(newEntry);
 
-    // Count current regos for grouping
-    const regoCount = {};
-    data.forEach(entry => {
-        regoCount[entry.rego] = (regoCount[entry.rego] || 0) + 1;
-    });
-
-    // Track color alternation per rego group
-    const regoColorMap = {}; // rego → color (1 or 2)
-    let currentGroupColor = 1;
-
-    data.forEach(entry => {
-        // Start new group if rego changes
-        if (!regoColorMap[entry.rego]) {
-            if (regoCount[entry.rego] > 1) {
-                currentGroupColor = currentGroupColor === 1 ? 2 : 1;
+            const { data: match } = await supabaseClient.from('bookings').select('id').eq('release', release).eq('date', today).eq('completed', false).limit(1);
+            if (match && match.length > 0) {
+                await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
             }
-            regoColorMap[entry.rego] = currentGroupColor;
-        }
 
-        const tr = document.createElement('tr');
-        if (regoCount[entry.rego] > 1) {
-            tr.classList.add(`truck-group${regoColorMap[entry.rego]}`);
-        }
-
-        const hasNumber = entry.container_number && entry.container_number.trim() !== '';
-        tr.innerHTML = `
-            <td>${entry.release}</td>
-            <td>${entry.shippingline}</td>
-            <td>${entry.iso}</td>
-            <td>${entry.grade}</td>
-            <td>${entry.carrier}</td>
-            <td>${entry.rego}</td>
-            <td>${entry.door_direction}</td>
-            <td><input type="text" value="${entry.container_number || ''}" data-id="${entry.id}" class="containerInput" style="width:100%;padding:5px;"></td>
-            <td>
-                <button class="completeBtn" data-id="${entry.id}" style="background:${hasNumber ? '#dc3545' : '#ccc'};" ${hasNumber ? '' : 'disabled'}>Complete</button>
-                <button class="delete-btn" data-id="${entry.id}">×</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-
-    // ... keep your existing event listeners for containerInput, completeBtn, delete-btn exactly as they are ...
-}
-
-        document.querySelectorAll('.containerInput').forEach(input => {
-    // Live enable/disable Complete button
-    input.addEventListener('input', (e) => {
-        const value = e.target.value.trim();
-        const tr = e.target.closest('tr');
-        const btn = tr.querySelector('.completeBtn');
-        btn.disabled = value === '';
-        btn.style.background = value ? '#dc3545' : '#ccc';
-    });
-
-    // Save on blur OR when Complete is clicked (to catch fast users)
-    input.addEventListener('blur', saveContainerNumber);
-    // Also save on Enter key
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            saveContainerNumber.call(input);
-        }
-    });
-});
-
-async function saveContainerNumber() {
-    const id = this.dataset.id;
-    const value = this.value.trim();
-    if (value !== this.defaultValue) {  // only save if changed
-        await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
-    }
-}
-
-        document.querySelectorAll('.completeBtn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const tr = btn.closest('tr');
-        const input = tr.querySelector('.containerInput');
-        const id = btn.dataset.id;
-
-        // Force save current container number before completing
-        const currentValue = input.value.trim();
-        if (currentValue) {
-            await supabaseClient.from('onsite').update({ container_number: currentValue }).eq('id', id);
-        }
-
-        const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
-
-        await supabaseClient.from('history').insert({
-            ...entry,
-            completed_at: new Date().toLocaleString(),
-            completed_date: today
+            e.target.reset();
+            loadOnsite();
+            loadBookings();
         });
 
-        await supabaseClient.from('onsite').delete().eq('id', id);
-        loadOnsite();
-        if (document.getElementById('history').classList.contains('active')) loadHistory();
-    });
-});
+        // Real-time
+        supabaseClient
+            .channel('public-bookings')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings())
+            .subscribe();
 
-        document.querySelectorAll('#onsiteBody .delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const id = btn.dataset.id;
-                if (confirm('Are you sure you want to delete this on-site container?')) {
-                    supabaseClient.from('onsite').delete().eq('id', id).then(() => loadOnsite());
-                }
-            });
-        });
-    }
+        supabaseClient
+            .channel('public-onsite')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite())
+            .subscribe();
 
-    function renderHistoryTable(data) {
-        const tbody = document.getElementById('historyBody');
-        tbody.innerHTML = '';
-        data.forEach(entry => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${entry.release}</td>
-                <td>${entry.shippingline}</td>
-                <td>${entry.iso}</td>
-                <td>${entry.grade}</td>
-                <td>${entry.carrier}</td>
-                <td>${entry.rego}</td>
-                <td>${entry.door_direction}</td>
-                <td>${entry.container_number || ''}</td>
-                <td>${entry.completed_at || ''}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
+        supabaseClient
+            .channel('public-history')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory())
+            .subscribe();
 
-    function moveBookingToOnsite(booking) {
-        document.querySelector('.tab[data-tab="onsite"]').click();
-        document.getElementById('modal-release').value = booking.release;
-        document.getElementById('modal-shippingline').value = booking.shippingline;
-        document.getElementById('modal-iso').value = booking.iso;
-        document.getElementById('modal-grade').value = booking.grade;
-        document.getElementById('modal-carrier').value = booking.carrier;
-        document.getElementById('modal-rego').focus();
-    }
-
-    // Auto-fill on release number blur in On Site
-    document.getElementById('modal-release').addEventListener('blur', async () => {
-        const rel = document.getElementById('modal-release').value.trim().toUpperCase();
-        if (!rel) return;
-
-        const { data } = await supabaseClient.from('bookings').select('*').eq('release', rel).eq('date', today).eq('completed', false).limit(1);
-        if (data && data.length > 0) {
-            const b = data[0];
-            document.getElementById('modal-shippingline').value = b.shippingline;
-            document.getElementById('modal-iso').value = b.iso;
-            document.getElementById('modal-grade').value = b.grade;
-            document.getElementById('modal-carrier').value = b.carrier;
-        }
-    });
-
-    // Load functions (public data)
-    async function loadBookings() {
-        const { data } = await supabaseClient.from('bookings').select('*').eq('date', bookingsDate);
-        renderBookingsTable(data || []);
-    }
-
-    async function loadOnsite() {
-        const { data } = await supabaseClient.from('onsite').select('*');
-        renderOnsiteTable(data || []);
-    }
-
-    async function loadHistory() {
-        const { data } = await supabaseClient.from('history').select('*').eq('completed_date', historyDate);
-        renderHistoryTable(data || []);
-    }
-
-    // Clear form buttons
-    document.getElementById('clear-booking').addEventListener('click', () => {
-        document.getElementById('bookingForm').reset();
-    });
-
-    document.getElementById('clear-onsite').addEventListener('click', () => {
-        document.getElementById('onsiteForm').reset();
-    });
-
-    // Forms
-    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const newBooking = {
-            date: bookingsDate,
-            release: document.getElementById('booking-release').value.trim().toUpperCase(),
-            shippingline: document.getElementById('booking-shippingline').value.trim().toUpperCase(),
-            iso: document.getElementById('booking-iso').value.trim().toUpperCase(),
-            grade: document.getElementById('booking-grade').value.trim().toUpperCase(),
-            carrier: document.getElementById('booking-carrier').value.trim().toUpperCase(),
-            completed: false
-        };
-        await supabaseClient.from('bookings').insert(newBooking);
-        e.target.reset();
+        // Initial load
         loadBookings();
-    });
-
-    document.getElementById('onsiteForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const release = document.getElementById('modal-release').value.trim().toUpperCase();
-        const newEntry = {
-            release,
-            shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
-            iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
-            grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
-            carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
-            rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
-            door_direction: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
-            container_number: ''
-        };
-        await supabaseClient.from('onsite').insert(newEntry);
-
-        const { data: match } = await supabaseClient.from('bookings').select('id').eq('release', release).eq('date', today).eq('completed', false).limit(1);
-        if (match && match.length > 0) {
-            await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
-        }
-
-        e.target.reset();
         loadOnsite();
-        loadBookings();
-    });
-
-    // Real-time
-    supabaseClient
-        .channel('public-bookings')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings())
-        .subscribe();
-
-    supabaseClient
-        .channel('public-onsite')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite())
-        .subscribe();
-
-    supabaseClient
-        .channel('public-history')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory())
-        .subscribe();
-
-    // Initial load
-    loadBookings();
-    loadOnsite();
-}
+    }
+});
