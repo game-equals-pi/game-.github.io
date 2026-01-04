@@ -227,36 +227,58 @@ async function initApp() {
         });
 
         document.querySelectorAll('.containerInput').forEach(input => {
-            input.addEventListener('input', (e) => {
-                const value = e.target.value.trim();
-                const tr = e.target.closest('tr');
-                const btn = tr.querySelector('.completeBtn');
-                btn.disabled = value === '';
-                btn.style.background = value ? '#dc3545' : '#ccc';
-            });
-            input.addEventListener('blur', async (e) => {
-                const id = e.target.dataset.id;
-                const value = e.target.value.trim();
-                await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
-            });
-        });
+    // Live enable/disable Complete button
+    input.addEventListener('input', (e) => {
+        const value = e.target.value.trim();
+        const tr = e.target.closest('tr');
+        const btn = tr.querySelector('.completeBtn');
+        btn.disabled = value === '';
+        btn.style.background = value ? '#dc3545' : '#ccc';
+    });
+
+    // Save on blur OR when Complete is clicked (to catch fast users)
+    input.addEventListener('blur', saveContainerNumber);
+    // Also save on Enter key
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            saveContainerNumber.call(input);
+        }
+    });
+});
+
+async function saveContainerNumber() {
+    const id = this.dataset.id;
+    const value = this.value.trim();
+    if (value !== this.defaultValue) {  // only save if changed
+        await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
+    }
+}
 
         document.querySelectorAll('.completeBtn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.dataset.id;
-                const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
+    btn.addEventListener('click', async () => {
+        const tr = btn.closest('tr');
+        const input = tr.querySelector('.containerInput');
+        const id = btn.dataset.id;
 
-                await supabaseClient.from('history').insert({
-                    ...entry,
-                    completed_at: new Date().toLocaleString(),
-                    completed_date: today
-                });
+        // Force save current container number before completing
+        const currentValue = input.value.trim();
+        if (currentValue) {
+            await supabaseClient.from('onsite').update({ container_number: currentValue }).eq('id', id);
+        }
 
-                await supabaseClient.from('onsite').delete().eq('id', id);
-                loadOnsite();
-                if (document.getElementById('history').classList.contains('active')) loadHistory();
-            });
+        const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
+
+        await supabaseClient.from('history').insert({
+            ...entry,
+            completed_at: new Date().toLocaleString(),
+            completed_date: today
         });
+
+        await supabaseClient.from('onsite').delete().eq('id', id);
+        loadOnsite();
+        if (document.getElementById('history').classList.contains('active')) loadHistory();
+    });
+});
 
         document.querySelectorAll('#onsiteBody .delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
