@@ -95,7 +95,7 @@ async function initApp() {
     const todayFull = new Date().toLocaleDateString('en-US', { timeZone: 'Pacific/Auckland', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
 
-    let bookingsDate = today;
+    let bookingsDate = todayFull;
     let historyDate = today;
 
     document.getElementById('bookingsDate').value = today;
