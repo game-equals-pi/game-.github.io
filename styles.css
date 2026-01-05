@@ -172,3 +172,69 @@ body.blood .settings-dropdown { background: #330000; border-color: #990000; colo
 body.blood .settings-item:hover { background: #660000; }
 body.blood .date-label { background: #990000; }
 body.blood .add-container-form { background: #660000; border-color: #990000; }
+
+/* Form inputs – base improvements */
+input[type="text"],
+input[type="date"],
+textarea {
+    background: white;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* Dark theme inputs */
+body.dark input[type="text"],
+body.dark input[type="date"],
+body.dark textarea {
+    background: #333;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+/* Ocean theme inputs */
+body.ocean input[type="text"],
+body.ocean input[type="date"],
+body.ocean textarea {
+    background: #f0f8ff;
+    color: #01579b;
+    border-color: #81d4fa;
+}
+
+/* High Contrast inputs */
+body.high-contrast input[type="text"],
+body.high-contrast input[type="date"],
+body.high-contrast textarea {
+    background: black;
+    color: white;
+    border-color: white;
+}
+
+/* Blood theme inputs */
+body.blood input[type="text"],
+body.blood input[type="date"],
+body.blood textarea {
+    background: #330000;
+    color: #ffcccc;
+    border-color: #990000;
+}
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0,123,255,0.5);
+}
+
+body.dark input:focus,
+body.dark textarea:focus {
+    border-color: #66b3ff;
+    box-shadow: 0 0 5px rgba(102,179,255,0.5);
+}
+
+body.blood input:focus,
+body.blood textarea:focus {
+    border-color: #ff6666;
+    box-shadow: 0 0 5px rgba(255,102,102,0.5);
+}
