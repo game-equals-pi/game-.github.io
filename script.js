@@ -283,11 +283,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
 
-                    await supabaseClient.from('history').insert({
-                        ...entry,
-                        completed_at: new Date().toLocaleString(),
+                    const { error } = await supabaseClient.from('history').insert({
+                        release: entry.release,
+                        shippingline: entry.shippingline,
+                        iso: entry.iso,
+                        grade: entry.grade,
+                        carrier: entry.carrier,
+                        rego: entry.rego,
+                        door_direction: entry.door_direction,
+                        container_number: entry.container_number,
+                        note: entry.note || null,
+                        completed_at: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
                         completed_date: today
                     });
+                    
+                    if (error) {
+                        console.error('History insert failed:', error);
+                        return; // DO NOT DELETE ONSITE IF THIS FAILS
+                    }
+
 
                     await supabaseClient.from('onsite').delete().eq('id', id);
                     loadOnsite();
