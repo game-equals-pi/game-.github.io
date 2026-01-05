@@ -172,9 +172,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
+                // Improved note row
                 if (booking.note && booking.note.trim() !== '') {
                     const noteTr = document.createElement('tr');
-                    noteTr.innerHTML = `<td colspan="7" style="padding-left:40px; font-style:italic; color:#555; background:#f9f9f9;">${booking.note}</td>`;
+                    const noteTd = document.createElement('td');
+                    noteTd.colSpan = 7;
+                    noteTd.className = 'note-row';
+                    noteTd.textContent = booking.note;
+                    noteTr.appendChild(noteTd);
                     tbody.appendChild(noteTr);
                 }
 
@@ -236,10 +241,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
+                // Improved note row
                 if (entry.note && entry.note.trim() !== '') {
                     const noteTr = document.createElement('tr');
-                    noteTr.style.background = '#f9f9f9';
-                    noteTr.innerHTML = `<td colspan="9" style="padding-left:40px; font-style:italic; color:#555;">${entry.note}</td>`;
+                    const noteTd = document.createElement('td');
+                    noteTd.colSpan = 9;
+                    noteTd.className = 'note-row';
+                    noteTd.textContent = entry.note;
+                    noteTr.appendChild(noteTd);
                     tbody.appendChild(noteTr);
                 }
             });
@@ -267,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Complete button – saves container number and moves to history
+            // Complete button
             document.querySelectorAll('.completeBtn').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const tr = btn.closest('tr');
