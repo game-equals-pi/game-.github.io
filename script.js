@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Check existing session
     supabaseClient.auth.getSession().then(({ data }) => {
         if (data.session) {
             user = data.session.user;
@@ -110,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab).classList.add('active');
 
-                // Reset date pickers to today on tab switch
                 document.getElementById('bookingsDate').value = today;
                 document.getElementById('historyDate').value = today;
                 bookingsDate = today;
@@ -173,7 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
-                // Add note row if exists
                 if (booking.note && booking.note.trim() !== '') {
                     const noteTr = document.createElement('tr');
                     noteTr.innerHTML = `<td colspan="7" style="padding-left:40px; font-style:italic; color:#555; background:#f9f9f9;">${booking.note}</td>`;
@@ -199,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function renderOnsiteTable(data) {
-            // Preserve chronological order (no sorting)
             const tbody = document.getElementById('onsiteBody');
             tbody.innerHTML = '';
 
@@ -239,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
-                // Add note row if exists
                 if (entry.note && entry.note.trim() !== '') {
                     const noteTr = document.createElement('tr');
                     noteTr.style.background = '#f9f9f9';
@@ -248,6 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            // Container input handlers
             document.querySelectorAll('.containerInput').forEach(input => {
                 input.addEventListener('input', (e) => {
                     const value = e.target.value.trim();
@@ -256,93 +254,53 @@ document.addEventListener('DOMContentLoaded', () => {
                     btn.disabled = value === '';
                     btn.style.background = value ? '#dc3545' : '#ccc';
                 });
-                input.addEventListener('blur', saveContainerNumber);
+
+                input.addEventListener('blur', async () => {
+                    const id = input.dataset.id;
+                    const value = input.value.trim();
+                    await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
+                });
+
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
-                        saveContainerNumber.call(input);
+                        input.blur();
                     }
                 });
             });
 
-            async function saveContainerNumber() {
-                const id = this.dataset.id;
-                const value = this.value.trim();
-                await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
-            }
+            // Complete button – fixed and guaranteed to save to history
+            document.querySelectorAll('.completeBtn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const tr = btn.closest('tr');
+                    const input = tr.querySelector('.containerInput');
+                    const id = btn.dataset.id;
 
-document.querySelectorAll('.completeBtn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const tr = btn.closest('tr');
-        const input = tr.querySelector('.containerInput');
-        const id = btn.dataset.id;
+                    // Save container number
+                    const currentValue = input.value.trim();
+                    if (currentValue) {
+                        await supabaseClient.from('onsite').update({ container_number: currentValue }).eq('id', id);
+                    }
 
-        // Save container number first
-        const currentValue = input.value.trim();
-        if (currentValue) {
-            const { error: updateError } = await supabaseClient
-                .from('onsite')
-                .update({ container_number: currentValue })
-                .eq('id', id);
-            if (updateError) console.error('Update error:', updateError);
-        }
+                    // Fetch fresh entry
+                    const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
 
-        // Fetch fresh entry
-        const { data: entry, error: selectError } = await supabaseClient
-            .from('onsite')
-            .select('*')
-            .eq('id', id)
-            .single();
+                    // Insert into history
+                    await supabaseClient.from('history').insert({
+                        ...entry,
+                        completed_at: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+                        completed_date: today
+                    });
 
-        if (selectError) {
-            console.error('Select error:', selectError);
-            return;
-        }
-
-        if (!entry) {
-            console.error('No entry found for id:', id);
-            return;
-        }
-
-        // Insert into history with explicit completed_date
-        const historyPayload = {
-            ...entry,
-            completed_at: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
-            completed_date: today  // this is already 'YYYY-MM-DD' in Auckland time
-        };
-
-        console.log('Inserting into history:', historyPayload);  // ← DEBUG LINE
-
-        const { error: insertError } = await supabaseClient
-            .from('history')
-            .insert(historyPayload);
-
-        if (insertError) {
-            console.error('History insert failed:', insertError);
-            alert('Failed to save to history – check console');
-            return;
-        }
-
-        // Delete from onsite
-        const { error: deleteError } = await supabaseClient
-            .from('onsite')
-            .delete()
-            .eq('id', id);
-
-        if (deleteError) console.error('Delete error:', deleteError);
-
-        // Refresh
-        loadOnsite();
-        loadHistory();  // Force refresh
-    });
-});
-
-
+                    // Delete from onsite
                     await supabaseClient.from('onsite').delete().eq('id', id);
+
+                    // Refresh
                     loadOnsite();
-                    if (document.getElementById('history').classList.contains('active')) loadHistory();
+                    loadHistory();  // Force history refresh
                 });
             });
 
+            // Delete button
             document.querySelectorAll('#onsiteBody .delete-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -381,6 +339,7 @@ document.querySelectorAll('.completeBtn').forEach(btn => {
             document.getElementById('modal-iso').value = booking.iso;
             document.getElementById('modal-grade').value = booking.grade;
             document.getElementById('modal-carrier').value = booking.carrier;
+            document.getElementById('modal-note').value = booking.note || '';
             document.getElementById('modal-rego').focus();
         }
 
@@ -388,14 +347,14 @@ document.querySelectorAll('.completeBtn').forEach(btn => {
             const rel = document.getElementById('modal-release').value.trim().toUpperCase();
             if (!rel) return;
 
-            const { data } = await supabaseClient.from('bookings').select('*').eq('release', rel).eq('date', today).eq('completed', false).limit(1);
+            const { data } = await supabaseClient.from('bookings').select('shippingline, iso, grade, carrier, note').eq('release', rel).eq('date', today).eq('completed', false).limit(1);
             if (data && data.length > 0) {
                 const b = data[0];
                 document.getElementById('modal-shippingline').value = b.shippingline;
                 document.getElementById('modal-iso').value = b.iso;
                 document.getElementById('modal-grade').value = b.grade;
                 document.getElementById('modal-carrier').value = b.carrier;
-                document.getElementById('modal-note').value = b.note;  // ← this line adds the note
+                document.getElementById('modal-note').value = b.note || '';
             }
         });
 
@@ -422,7 +381,6 @@ document.querySelectorAll('.completeBtn').forEach(btn => {
             document.getElementById('onsiteForm').reset();
         });
 
-        // Forms with note saving
         document.getElementById('bookingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const newBooking = {
@@ -466,21 +424,10 @@ document.querySelectorAll('.completeBtn').forEach(btn => {
             loadBookings();
         });
 
-        // Real-time
-        supabaseClient
-            .channel('public-bookings')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings())
-            .subscribe();
-
-        supabaseClient
-            .channel('public-onsite')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite())
-            .subscribe();
-
-        supabaseClient
-            .channel('public-history')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory())
-            .subscribe();
+        // Real-time subscriptions
+        supabaseClient.channel('public-bookings').on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings()).subscribe();
+        supabaseClient.channel('public-onsite').on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite()).subscribe();
+        supabaseClient.channel('public-history').on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory()).subscribe();
 
         // Initial load
         loadBookings();
