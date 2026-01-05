@@ -270,37 +270,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 await supabaseClient.from('onsite').update({ container_number: value }).eq('id', id);
             }
 
-            document.querySelectorAll('.completeBtn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const tr = btn.closest('tr');
-                    const input = tr.querySelector('.containerInput');
-                    const id = btn.dataset.id;
+document.querySelectorAll('.completeBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const tr = btn.closest('tr');
+        const input = tr.querySelector('.containerInput');
+        const id = btn.dataset.id;
 
-                    const currentValue = input.value.trim();
-                    if (currentValue) {
-                        await supabaseClient.from('onsite').update({ container_number: currentValue }).eq('id', id);
-                    }
+        // Save container number first
+        const currentValue = input.value.trim();
+        if (currentValue) {
+            const { error: updateError } = await supabaseClient
+                .from('onsite')
+                .update({ container_number: currentValue })
+                .eq('id', id);
+            if (updateError) console.error('Update error:', updateError);
+        }
 
-                    const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
+        // Fetch fresh entry
+        const { data: entry, error: selectError } = await supabaseClient
+            .from('onsite')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-                    const { error } = await supabaseClient.from('history').insert({
-                        release: entry.release,
-                        shippingline: entry.shippingline,
-                        iso: entry.iso,
-                        grade: entry.grade,
-                        carrier: entry.carrier,
-                        rego: entry.rego,
-                        door_direction: entry.door_direction,
-                        container_number: entry.container_number,
-                        note: entry.note || null,
-                        completed_at: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
-                        completed_date: today
-                    });
-                    
-                    if (error) {
-                        console.error('History insert failed:', error);
-                        return; // DO NOT DELETE ONSITE IF THIS FAILS
-                    }
+        if (selectError) {
+            console.error('Select error:', selectError);
+            return;
+        }
+
+        if (!entry) {
+            console.error('No entry found for id:', id);
+            return;
+        }
+
+        // Insert into history with explicit completed_date
+        const historyPayload = {
+            ...entry,
+            completed_at: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+            completed_date: today  // this is already 'YYYY-MM-DD' in Auckland time
+        };
+
+        console.log('Inserting into history:', historyPayload);  // ← DEBUG LINE
+
+        const { error: insertError } = await supabaseClient
+            .from('history')
+            .insert(historyPayload);
+
+        if (insertError) {
+            console.error('History insert failed:', insertError);
+            alert('Failed to save to history – check console');
+            return;
+        }
+
+        // Delete from onsite
+        const { error: deleteError } = await supabaseClient
+            .from('onsite')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) console.error('Delete error:', deleteError);
+
+        // Refresh
+        loadOnsite();
+        loadHistory();  // Force refresh
+    });
+});
 
 
                     await supabaseClient.from('onsite').delete().eq('id', id);
