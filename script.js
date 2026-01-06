@@ -172,13 +172,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
-                // Improved note row
-                if (booking.note && booking.note.trim() !== '') {
+                // Improved note row – nested under parent
+                if (booking.note && booking.note.trim() !== '') {  // or 'entry.note' for On Site
                     const noteTr = document.createElement('tr');
                     const noteTd = document.createElement('td');
-                    noteTd.colSpan = 7;
+                    noteTd.colSpan = 7;  // Bookings: 7 columns | On Site: use 9
                     noteTd.className = 'note-row';
-                    noteTd.textContent = booking.note;
+                    noteTd.textContent = booking.note;  // or entry.note
                     noteTr.appendChild(noteTd);
                     tbody.appendChild(noteTr);
                 }
@@ -241,13 +241,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
-                // Improved note row
-                if (entry.note && entry.note.trim() !== '') {
+                // Improved note row – nested under parent
+                if (booking.note && booking.note.trim() !== '') {  // or 'entry.note' for On Site
                     const noteTr = document.createElement('tr');
                     const noteTd = document.createElement('td');
-                    noteTd.colSpan = 9;
+                    noteTd.colSpan = 9;  // Bookings: 7 columns | On Site: use 9
                     noteTd.className = 'note-row';
-                    noteTd.textContent = entry.note;
+                    noteTd.textContent = booking.note;  // or entry.note
                     noteTr.appendChild(noteTd);
                     tbody.appendChild(noteTr);
                 }
