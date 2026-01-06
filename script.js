@@ -23,22 +23,110 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Settings dropdown
-    document.getElementById('settingsBtn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.getElementById('settingsDropdown').classList.toggle('active');
-    });
+   // Settings panel
+document.getElementById('settingsBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('settingsPanel').classList.toggle('active');
+});
 
-    document.addEventListener('click', () => {
-        document.getElementById('settingsDropdown').classList.remove('active');
-    });
+document.querySelector('.close-settings').addEventListener('click', () => {
+    document.getElementById('settingsPanel').classList.remove('active');
+});
 
-    document.querySelectorAll('.settings-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const theme = item.dataset.theme;
-            document.body.className = '';
-            document.body.classList.add(theme);
-            saveTheme(theme);
-        });
+// Close when clicking outside
+document.addEventListener('click', (e) => {
+    const panel = document.getElementById('settingsPanel');
+    if (!panel.contains(e.target) && !document.getElementById('settingsBtn').contains(e.target)) {
+        panel.classList.remove('active');
+    }
+});
+
+// Tab switching inside settings
+document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+    });
+});
+
+// Custom colors
+const defaultColors = {
+    primary: '#007bff',
+    secondary: '#6c757d',
+    accent: '#28a745',
+    bg: '#f4f4f4',
+    text: '#333333'
+};
+
+function loadCustomColors() {
+    if (!user) return;
+    const saved = localStorage.getItem(`custom_colors_${user.id}`);
+    if (saved) {
+        const colors = JSON.parse(saved);
+        applyColors(colors);
+        updatePickerValues(colors);
+    } else {
+        applyColors(defaultColors);
+    }
+}
+
+function applyColors(colors) {
+    document.documentElement.style.setProperty('--color-primary', colors.primary);
+    document.documentElement.style.setProperty('--color-secondary', colors.secondary);
+    document.documentElement.style.setProperty('--color-accent', colors.accent);
+    document.documentElement.style.setProperty('--color-bg', colors.bg);
+    document.documentElement.style.setProperty('--color-text', colors.text);
+}
+
+function updatePickerValues(colors) {
+    document.getElementById('color-primary').value = colors.primary;
+    document.getElementById('color-secondary').value = colors.secondary;
+    document.getElementById('color-accent').value = colors.accent;
+    document.getElementById('color-bg').value = colors.bg;
+    document.getElementById('color-text').value = colors.text;
+}
+
+// Live preview
+['color-primary', 'color-secondary', 'color-accent', 'color-bg', 'color-text'].forEach(id => {
+    document.getElementById(id).addEventListener('input', (e) => {
+        const colors = {
+            primary: document.getElementById('color-primary').value,
+            secondary: document.getElementById('color-secondary').value,
+            accent: document.getElementById('color-accent').value,
+            bg: document.getElementById('color-bg').value,
+            text: document.getElementById('color-text').value
+        };
+        applyColors(colors);
+    });
+});
+
+// Save button
+document.getElementById('save-colors').addEventListener('click', () => {
+    if (!user) return;
+    const colors = {
+        primary: document.getElementById('color-primary').value,
+        secondary: document.getElementById('color-secondary').value,
+        accent: document.getElementById('color-accent').value,
+        bg: document.getElementById('color-bg').value,
+        text: document.getElementById('color-text').value
+    };
+    localStorage.setItem(`custom_colors_${user.id}`, JSON.stringify(colors));
+    alert('Colors saved!');
+});
+
+// Reset button
+document.getElementById('reset-colors').addEventListener('click', () => {
+    if (!user) return;
+    localStorage.removeItem(`custom_colors_${user.id}`);
+    applyColors(defaultColors);
+    updatePickerValues(defaultColors);
+    alert('Colors reset to default');
+});
+
+// Load custom colors on login
+// Call loadCustomColors() after successful login and in getSession
     });
 
     // Auth – mandatory
