@@ -172,13 +172,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
-                // Improved note row – nested under parent
-                if (booking.note && booking.note.trim() !== '') {
+                // Improved note row – wrapped in div for full styling
+                if (booking.note && booking.note.trim() !== '') {  // use 'booking' or 'entry'
                     const noteTr = document.createElement('tr');
                     const noteTd = document.createElement('td');
-                    noteTd.colSpan = 7;
-                    noteTd.className = 'note-row';
-                    noteTd.textContent = booking.note;
+                    noteTd.colSpan = 7;  // 7 for Bookings, 9 for On Site
+                    noteTd.innerHTML = `<div class="note-content">${booking.note}</div>`;
                     noteTr.appendChild(noteTd);
                     tbody.appendChild(noteTr);
                 }
@@ -242,16 +241,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 tbody.appendChild(tr);
 
-                // Improved note row – nested under parent
-                if (entry.note && entry.note.trim() !== '') {
-                    const noteTr = document.createElement('tr');
-                    const noteTd = document.createElement('td');
-                    noteTd.colSpan = 9;
-                    noteTd.className = 'note-row';
-                    noteTd.textContent = entry.note;
-                    noteTr.appendChild(noteTd);
-                    tbody.appendChild(noteTr);
-                }
+              // Improved note row – wrapped in div for full styling
+              if (booking.note && booking.note.trim() !== '') {  // use 'booking' or 'entry'
+                  const noteTr = document.createElement('tr');
+                  const noteTd = document.createElement('td');
+                  noteTd.colSpan = 9;  // 7 for Bookings, 9 for On Site
+                  noteTd.innerHTML = `<div class="note-content">${booking.note}</div>`;
+                  noteTr.appendChild(noteTd);
+                  tbody.appendChild(noteTr);
+              }
+              
             });
 
             // Container input handlers
