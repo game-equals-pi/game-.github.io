@@ -173,16 +173,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.appendChild(tr);
 
                 // Improved note row – nested under parent
-                if (booking.note && booking.note.trim() !== '') {  // or 'entry.note' for On Site
+                if (booking.note && booking.note.trim() !== '') {
                     const noteTr = document.createElement('tr');
                     const noteTd = document.createElement('td');
-                    noteTd.colSpan = 7;  // Bookings: 7 columns | On Site: use 9
+                    noteTd.colSpan = 7;
                     noteTd.className = 'note-row';
-                    noteTd.textContent = booking.note;  // or entry.note
+                    noteTd.textContent = booking.note;
                     noteTr.appendChild(noteTd);
                     tbody.appendChild(noteTr);
                 }
 
+                // Click to move to onsite – inside loop so 'booking' is in scope
                 tr.addEventListener('click', (e) => {
                     if (!e.target.classList.contains('delete-btn')) {
                         moveBookingToOnsite(booking);
@@ -242,12 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 tbody.appendChild(tr);
 
                 // Improved note row – nested under parent
-                if (booking.note && booking.note.trim() !== '') {  // or 'entry.note' for On Site
+                if (entry.note && entry.note.trim() !== '') {
                     const noteTr = document.createElement('tr');
                     const noteTd = document.createElement('td');
-                    noteTd.colSpan = 9;  // Bookings: 7 columns | On Site: use 9
+                    noteTd.colSpan = 9;
                     noteTd.className = 'note-row';
-                    noteTd.textContent = booking.note;  // or entry.note
+                    noteTd.textContent = entry.note;
                     noteTr.appendChild(noteTd);
                     tbody.appendChild(noteTr);
                 }
