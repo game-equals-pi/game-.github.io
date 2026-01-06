@@ -239,39 +239,44 @@ body.blood textarea:focus {
     box-shadow: 0 0 5px rgba(255,102,102,0.5);
 }
 
-/* Note rows – base style */
+/* Improved note row – nested child appearance */
 .note-row {
-    background: #f9f9f9;      /* light theme default */
+    background: #f9f9f9;
     padding: 10px 15px;
-    margin: 5px 40px 10px 40px;  /* indented, space above/below */
-    border-radius: 6px;
+    margin: 5px 20px 10px 60px;  /* More left indent to show nesting */
+    border-left: 4px solid #007bff;  /* Visual "parent" connector line */
+    border-radius: 0 6px 6px 0;
     font-style: italic;
-    color: #555;
+    color: #444;
     font-size: 14px;
     line-height: 1.4;
-    width: 75%;                 /* 3/4 width of full row */
-    align-self: flex-start;     /* aligns left in table cell */
+    max-width: 70%;                 /* Limits width, not full row */
+    align-self: flex-start;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transition: background 0.3s, color 0.3s;
+    transition: all 0.3s;
 }
 
-/* Theme-specific note rows */
+/* Theme overrides */
 body.dark .note-row {
     background: #2a2a2a;
     color: #bbbbbb;
+    border-left-color: #66b3ff;
 }
 
 body.ocean .note-row {
     background: #e3f2fd;
     color: #01579b;
+    border-left-color: #81d4fa;
 }
 
 body.high-contrast .note-row {
     background: #333;
     color: white;
+    border-left-color: yellow;
 }
 
 body.blood .note-row {
     background: #660000;
     color: #ffcccc;
+    border-left-color: #ff6666;
 }
