@@ -1,25 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Container Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="/Ico updated.png" type="image/png">
-</head>
-<body>
-
-<!-- Login Page -->
-<div id="login-page">
-    <h1>Container Dashboard</h1>
-    <h2>Login required</h2>
-    <input type="email" id="auth-email" placeholder="Email" required>
-    <input type="password" id="auth-password" placeholder="Password" required>
-    <button id="auth-btn">Login / Sign Up</button>
-    <p id="auth-message"></p>
-</div>
-
-<!-- Dashboard -->
 <div id="dashboard" style="display:none;">
     <div class="tabs">
         <button class="settings-btn" id="settingsBtn">
@@ -30,50 +8,52 @@
         <div class="tab" data-tab="history">History</div>
         <div class="date-label" id="dateLabel">Today: Loading...</div>
         <button id="logout-btn">Logout</button>
+    </div>
 
-<div class="settings-panel" id="settingsPanel">
-    <div class="settings-header">
-        <h3>Settings</h3>
-        <button class="close-settings">×</button>
-    </div>
-    <div class="settings-tabs">
-        <button class="settings-tab active" data-tab="ui">UI</button>
-        <button class="settings-tab" data-tab="role">Role</button>
-    </div>
-    <div class="settings-content">
-        <div id="ui-tab" class="tab-content active">
-            <h4>Custom Colors</h4>
-            <div class="color-picker-group">
-                <label>Primary Color</label>
-                <input type="color" id="color-primary" value="#007bff">
-            </div>
-            <div class="color-picker-group">
-                <label>Secondary Color</label>
-                <input type="color" id="color-secondary" value="#6c757d">
-            </div>
-            <div class="color-picker-group">
-                <label>Accent Color</label>
-                <input type="color" id="color-accent" value="#28a745">
-            </div>
-            <div class="color-picker-group">
-                <label>Background</label>
-                <input type="color" id="color-bg" value="#f4f4f4">
-            </div>
-            <div class="color-picker-group">
-                <label>Text Color</label>
-                <input type="color" id="color-text" value="#333333">
-            </div>
-            <button id="save-colors">Save Colors</button>
-            <button id="reset-colors">Reset to Default</button>
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h3>Settings</h3>
+            <button class="close-settings">×</button>
         </div>
-        <div id="role-tab" class="tab-content">
-            <h4>User Role</h4>
-            <p>Coming soon...</p>
+        <div class="settings-tabs">
+            <button class="settings-tab active" data-tab="ui">UI</button>
+            <button class="settings-tab" data-tab="role">Role</button>
+        </div>
+        <div class="settings-content">
+            <div id="ui-tab" class="tab-content active">
+                <h4>Custom Colors</h4>
+                <div class="color-picker-group">
+                    <label>Primary Color</label>
+                    <input type="color" id="color-primary" value="#007bff">
+                </div>
+                <div class="color-picker-group">
+                    <label>Secondary Color</label>
+                    <input type="color" id="color-secondary" value="#6c757d">
+                </div>
+                <div class="color-picker-group">
+                    <label>Accent Color</label>
+                    <input type="color" id="color-accent" value="#28a745">
+                </div>
+                <div class="color-picker-group">
+                    <label>Background</label>
+                    <input type="color" id="color-bg" value="#f4f4f4">
+                </div>
+                <div class="color-picker-group">
+                    <label>Text Color</label>
+                    <input type="color" id="color-text" value="#333333">
+                </div>
+                <button id="save-colors">Save Colors</button>
+                <button id="reset-colors">Reset to Default</button>
+            </div>
+            <div id="role-tab" class="tab-content">
+                <h4>User Role</h4>
+                <p>Coming soon...</p>
+            </div>
         </div>
     </div>
-</div>
 
-    <!-- Bookings Tab -->
+    <!-- Main Tab Contents – MOVED OUTSIDE settings-panel -->
     <div id="bookings" class="content active">
         <h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
         <form id="bookingForm">
@@ -104,7 +84,6 @@
         </table>
     </div>
 
-    <!-- On Site Tab -->
     <div id="onsite" class="content">
         <h1>On Site Containers</h1>
         <form id="onsiteForm" class="add-container-form">
@@ -128,7 +107,6 @@
         </table>
     </div>
 
-    <!-- History Tab -->
     <div id="history" class="content">
         <h1>History <input type="date" id="historyDate" class="tab-date"></h1>
         <table id="historyTable">
@@ -137,8 +115,3 @@
         </table>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
-</body>
-</html>
