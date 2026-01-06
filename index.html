@@ -1,3 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="/Ico updated.png" type="image/png">
+</head>
+<body>
+<!-- Login Page -->
+<div id="login-page">
+    <h1>Container Dashboard</h1>
+    <h2>Login required</h2>
+    <input type="email" id="auth-email" placeholder="Email" required>
+    <input type="password" id="auth-password" placeholder="Password" required>
+    <button id="auth-btn">Login / Sign Up</button>
+    <p id="auth-message"></p>
+</div>
+
+<!-- Dashboard -->
 <div id="dashboard" style="display:none;">
     <div class="tabs">
         <button class="settings-btn" id="settingsBtn">
@@ -53,7 +74,7 @@
         </div>
     </div>
 
-    <!-- Main Tab Contents – MOVED OUTSIDE settings-panel -->
+    <!-- Bookings Tab Content -->
     <div id="bookings" class="content active">
         <h1>Bookings <input type="date" id="bookingsDate" class="tab-date"></h1>
         <form id="bookingForm">
@@ -84,6 +105,7 @@
         </table>
     </div>
 
+    <!-- On Site Tab Content -->
     <div id="onsite" class="content">
         <h1>On Site Containers</h1>
         <form id="onsiteForm" class="add-container-form">
@@ -107,6 +129,7 @@
         </table>
     </div>
 
+    <!-- History Tab Content -->
     <div id="history" class="content">
         <h1>History <input type="date" id="historyDate" class="tab-date"></h1>
         <table id="historyTable">
@@ -115,3 +138,8 @@
         </table>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+</body>
+</html>
