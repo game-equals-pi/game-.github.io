@@ -239,40 +239,43 @@ body.blood textarea:focus {
     box-shadow: 0 0 5px rgba(255,102,102,0.5);
 }
 
-.note-row {
+/* Note content – full styling freedom inside table */
+.note-content {
     background: #f9f9f9;
     padding: 10px 15px;
-    margin: 8px 0 12px 60px;     /* Strong left indent */
+    margin: 8px 0 12px 60px;     /* strong left indent */
     border-left: 4px solid #007bff;
-    border-radius: 0 6px 6px 0;
+    border-radius: 6px;
     font-style: italic;
     color: #444;
     font-size: 14px;
     line-height: 1.4;
-    max-width: 75%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    max-width: 70%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     transition: all 0.3s;
 }
 
-body.dark .note-row {
+/* Theme overrides */
+body.dark .note-content {
     background: #2a2a2a;
     color: #bbbbbb;
     border-left-color: #66b3ff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
 }
 
-body.ocean .note-row {
+body.ocean .note-content {
     background: #e3f2fd;
     color: #01579b;
     border-left-color: #81d4fa;
 }
 
-body.high-contrast .note-row {
+body.high-contrast .note-content {
     background: #333;
     color: white;
     border-left-color: yellow;
 }
 
-body.blood .note-row {
+body.blood .note-content {
     background: #660000;
     color: #ffcccc;
     border-left-color: #ff6666;
