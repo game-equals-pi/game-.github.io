@@ -89,10 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return saved || 'dispatch';
     }
 
-function showDashboard(role) {
-    document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
-    document.getElementById(`${role}-dashboard`).classList.add('active');
-}
+    function showDashboard(role) {
+        document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+        document.getElementById(`${role}-dashboard`).classList.add('active');
+    }
 
     document.getElementById('save-role').addEventListener('click', () => {
         if (!user) return;
@@ -185,57 +185,42 @@ function showDashboard(role) {
         location.reload();
     });
 
-    // Full app logic (only for dispatch role)
+    // Full app logic
     async function initApp(role = 'dispatch') {
+        // Set real date in header
+        const todayFull = new Date().toLocaleDateString('en-US', { 
+            timeZone: 'Pacific/Auckland', 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
 
-      // Generic tab switching for all dashboards
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const parentTabs = tab.closest('.tabs');
-        parentTabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+        // Generic tab switching for ALL dashboards
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const parentTabs = tab.closest('.tabs');
+                if (!parentTabs) return;
+                parentTabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
 
-        const targetId = tab.dataset.tab;
-        const parentView = tab.closest('.dashboard-view');
-        parentView.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.getElementById(targetId).classList.add('active');
-    });
-});
-      
+                const targetId = tab.dataset.tab;
+                const parentView = tab.closest('.dashboard-view');
+                parentView.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // Only run dispatch-specific logic if role is dispatch
         if (role !== 'dispatch') return;
 
         const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
-        const todayFull = new Date().toLocaleDateString('en-US', { timeZone: 'Pacific/Auckland', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
-
         let bookingsDate = today;
         let historyDate = today;
 
         document.getElementById('bookingsDate').value = today;
         document.getElementById('historyDate').value = today;
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById(tab.dataset.tab).classList.add('active');
-
-                if (tab.dataset.tab === 'bookings') loadBookings();
-                else if (tab.dataset.tab === 'history') loadHistory();
-                else if (tab.dataset.tab === 'onsite') loadOnsite();
-            });
-        });
-
-        document.getElementById('bookingsDate').addEventListener('change', (e) => {
-            bookingsDate = e.target.value;
-            loadBookings();
-        });
-
-        document.getElementById('historyDate').addEventListener('change', (e) => {
-            historyDate = e.target.value;
-            loadHistory();
-        });
 
         document.getElementById('toggleCompleted').addEventListener('click', (e) => {
             hideCompleted = !hideCompleted;
@@ -523,7 +508,7 @@ document.querySelectorAll('.tab').forEach(tab => {
         supabaseClient.channel('public-onsite').on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite()).subscribe();
         supabaseClient.channel('public-history').on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory()).subscribe();
 
-        // Initial load
+        // Initial load for dispatch
         loadBookings();
         loadOnsite();
     }
