@@ -193,72 +193,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Full app logic
     async function initApp(role = 'dispatch') {
-        // Set real date in header
-        const todayFull = new Date().toLocaleDateString('en-US', {
-            timeZone: 'Pacific/Auckland',
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
+    // Set real date in header
+    const todayFull = new Date().toLocaleDateString('en-US', {
+        timeZone: 'Pacific/Auckland',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
+
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+
+    // Initialize dates only once
+    if (!bookingsDate) bookingsDate = today;
+    if (!historyDate) historyDate = today;
+
+    // Set date pickers to current values
+    const bookingsPicker = document.getElementById('bookingsDate');
+    const historyPicker = document.getElementById('historyDate');
+    if (bookingsPicker) bookingsPicker.value = bookingsDate;
+    if (historyPicker) historyPicker.value = historyDate;
+
+    // Generic tab switching + data load
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const parentTabs = tab.closest('.tabs');
+            if (!parentTabs) return;
+            parentTabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const targetId = tab.dataset.tab;
+            const parentView = tab.closest('.dashboard-view');
+            parentView.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+
+            // Load data on tab click
+            if (targetId === 'bookings') loadBookings();
+            if (targetId === 'onsite') loadOnsite();
+            if (targetId === 'history') loadHistory();
         });
-        document.getElementById('dateLabel').textContent = `Today: ${todayFull}`;
+    });
 
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
-
-        // Initialize dates only once
-        if (!bookingsDate) bookingsDate = today;
-        if (!historyDate) historyDate = today;
-
-        // Set date pickers to current values
-        const bookingsPicker = document.getElementById('bookingsDate');
-        const historyPicker = document.getElementById('historyDate');
-        if (bookingsPicker) bookingsPicker.value = bookingsDate;
-        if (historyPicker) historyPicker.value = historyDate;
-
-        // Generic tab switching + data load
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const parentTabs = tab.closest('.tabs');
-                if (!parentTabs) return;
-                parentTabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                const targetId = tab.dataset.tab;
-                const parentView = tab.closest('.dashboard-view');
-                parentView.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-                document.getElementById(targetId).classList.add('active');
-
-                // Load data on tab click
-                if (targetId === 'bookings') loadBookings();
-                if (targetId === 'onsite') loadOnsite();
-                if (targetId === 'history') loadHistory();
-            });
-        });
-
-        // Date picker listeners
-        if (bookingsPicker) {
-            bookingsPicker.addEventListener('change', (e) => {
-                bookingsDate = e.target.value;
-                loadBookings();
-            });
-        }
-
-        if (historyPicker) {
-            historyPicker.addEventListener('change', (e) => {
-                historyDate = e.target.value;
-                loadHistory();
-            });
-        }
-
-        if (role !== 'dispatch') return;
-
-        document.getElementById('toggleCompleted')?.addEventListener('click', (e) => {
-            hideCompleted = !hideCompleted;
-            e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
-            e.target.style.background = hideCompleted ? '#dc3545' : '#555';
+    // Date picker listeners
+    if (bookingsPicker) {
+        bookingsPicker.addEventListener('change', (e) => {
+            bookingsDate = e.target.value;
             loadBookings();
         });
+    }
 
+    if (historyPicker) {
+        historyPicker.addEventListener('change', (e) => {
+            historyDate = e.target.value;
+            loadHistory();
+        });
+    }
+
+    // Dispatch-specific
+    if (role !== 'dispatch') {
+        // For non-dispatch roles, load any placeholder data if needed
+        return;
+    }
+
+    document.getElementById('toggleCompleted')?.addEventListener('click', (e) => {
+        hideCompleted = !hideCompleted;
+        e.target.textContent = hideCompleted ? 'Show Completed' : 'Hide Completed';
+        e.target.style.background = hideCompleted ? '#dc3545' : '#555';
+        loadBookings();
+    });
         function renderBookingsTable(data) {
             data.sort((a, b) => {
                 const carrierA = a.carrier.toUpperCase();
@@ -467,21 +470,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        async function loadBookings() {
-            const { data } = await supabaseClient.from('bookings').select('*').eq('date', bookingsDate);
-            renderBookingsTable(data || []);
-        }
+        aasync function loadBookings() {
+        const { data } = await supabaseClient.from('bookings').select('*').eq('date', bookingsDate);
+        renderBookingsTable(data || []);
+    }
 
-        async function loadOnsite() {
-            const { data } = await supabaseClient.from('onsite').select('*');
-            renderOnsiteTable(data || []);
-        }
+    async function loadOnsite() {
+        const { data } = await supabaseClient.from('onsite').select('*');
+        renderOnsiteTable(data || []);
+    }
 
-        async function loadHistory() {
-            const { data } = await supabaseClient.from('history').select('*').eq('completed_date', historyDate);
-            renderHistoryTable(data || []);
-        }
+    async function loadHistory() {
+        const { data } = await supabaseClient.from('history').select('*').eq('completed_date', historyDate);
+        renderHistoryTable(data || []);
+    }
 
+    // Real-time subscriptions
+    supabaseClient.channel('public-bookings').on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => loadBookings()).subscribe();
+    supabaseClient.channel('public-onsite').on('postgres_changes', { event: '*', schema: 'public', table: 'onsite' }, () => loadOnsite()).subscribe();
+    supabaseClient.channel('public-history').on('postgres_changes', { event: '*', schema: 'public', table: 'history' }, () => loadHistory()).subscribe();
+
+    // CRITICAL: Initial data load on startup
+    loadBookings();
+    loadOnsite();
+    loadHistory();
+      
         document.getElementById('clear-booking')?.addEventListener('click', () => {
             document.getElementById('bookingForm').reset();
         });
