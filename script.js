@@ -94,13 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(`${role}-dashboard`).classList.add('active');
     }
 
-    document.getElementById('save-role').addEventListener('click', () => {
-        if (!user) return;
-        const newRole = roleSelect.value;
-        localStorage.setItem(`user_role_${user.id}`, newRole);
-        alert('Role saved! Page will reload.');
-        location.reload();
-    });
+document.getElementById('user-role').addEventListener('change', function() {
+    if (!user) return;
+    const newRole = this.value;
+    localStorage.setItem(`user_role_${user.id}`, newRole);
+    currentRoleDisplay.textContent = newRole.charAt(0).toUpperCase() + newRole.slice(1);
+    showDashboard(newRole);
+    // No reload — instant switch
+});
 
     // Settings panel
     document.getElementById('settingsBtn').addEventListener('click', (e) => {
