@@ -209,6 +209,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const parentView = tab.closest('.dashboard-view');
                 parentView.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
                 document.getElementById(targetId).classList.add('active');
+              // Load data when tab is clicked
+        if (targetId === 'history') {
+            loadHistory();
+        } else if (targetId === 'bookings') {
+            loadBookings();
+        } else if (targetId === 'onsite') {
+            loadOnsite();
+        }
             });
         });
 
