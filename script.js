@@ -217,22 +217,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Generic tab switching + data load
         document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const parentTabs = tab.closest('.tabs');
-                if (!parentTabs) return;
-                parentTabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
+    tab.addEventListener('click', () => {
+        const parentTabs = tab.closest('.tabs');
+        if (!parentTabs) return;
+        parentTabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
 
-                const targetId = tab.dataset.tab;
-                const parentView = tab.closest('.dashboard-view');
-                parentView.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-                document.getElementById(targetId).classList.add('active');
+        const targetId = tab.dataset.tab;
+        const parentView = tab.closest('.dashboard-view');
+        parentView.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.getElementById(targetId).classList.add('active');
 
-                if (targetId === 'bookings') loadBookings();
-                if (targetId === 'onsite') loadOnsite();
-                if (targetId === 'history') loadHistory();
-            });
-        });
+        // Reset date picker to today when switching to Bookings or History
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+        if (targetId === 'bookings') {
+            const picker = document.getElementById('bookingsDate');
+            if (picker) picker.value = today;
+            bookingsDate = today;
+            loadBookings();
+        } else if (targetId === 'history') {
+            const picker = document.getElementById('historyDate');
+            if (picker) picker.value = today;
+            historyDate = today;
+            loadHistory();
+        } else if (targetId === 'onsite') {
+            loadOnsite();
+        }
+    });
+});
 
         // Date picker listeners
         if (bookingsPicker) {
