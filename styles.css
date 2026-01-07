@@ -277,3 +277,19 @@ tr:hover {
 .shared-header .date-label {
     margin: 0;
 }
+.shared-header {
+    background: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    height: 60px;
+}
+
+.shared-header .date-label {
+    margin: 0;
+    background: transparent;
+    color: white;
+    font-weight: bold;
+}
