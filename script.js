@@ -407,31 +407,46 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        document.querySelectorAll('.completeBtn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const tr = btn.closest('tr');
-                const input = tr.querySelector('.containerInput');
-                const id = btn.dataset.id;
+document.querySelectorAll('.completeBtn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const tr = btn.closest('tr');
+        const input = tr.querySelector('.containerInput');
+        const id = btn.dataset.id;
 
-                const currentValue = input.value.trim();
-                if (currentValue) {
-                    await supabaseClient.from('onsite').update({ container_number: currentValue }).eq('id', id);
-                }
+        const currentValue = input.value.trim();
+        if (currentValue) {
+            await supabaseClient.from('onsite').update({ container_number: currentValue }).eq('id', id);
+        }
 
-                const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
+        const { data: entry } = await supabaseClient.from('onsite').select('*').eq('id', id).single();
 
-await supabaseClient.from('history').insert({
-    ...entry,
-    completed_at: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
-    completed_date: new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' })
-});
-
-                await supabaseClient.from('onsite').delete().eq('id', id);
-
-                loadOnsite();
-                loadHistory();
-            });
+        await supabaseClient.from('history').insert({
+            ...entry,
+            completed_at: new Date().toLocaleString('en-NZ', { timeZone: 'Pacific/Auckland' }),
+            completed_date: new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' })
         });
+
+        await supabaseClient.from('onsite').delete().eq('id', id);
+
+        // Remove from driver movements
+        const { data: movement } = await supabaseClient
+            .from('movements')
+            .select('id')
+            .match({
+                release: entry.release,
+                rego: entry.rego,
+                direction: 'outwards'
+            })
+            .single();
+
+        if (movement) {
+            await supabaseClient.from('movements').delete().eq('id', movement.id);
+        }
+
+        loadOnsite();
+        loadHistory();
+    });
+});
 
         document.querySelectorAll('#onsiteBody .delete-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
