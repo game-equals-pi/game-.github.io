@@ -218,49 +218,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Onsite form listener — attached once (moved outside initApp)
-    document.getElementById('onsiteForm')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const release = document.getElementById('modal-release').value.trim().toUpperCase();
-        const newEntry = {
-            release,
-            shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
-            iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
-            grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
-            carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
-            rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
-            door_direction: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
-            container_number: '',
-            note: document.getElementById('modal-note').value.trim() || null
-        };
+ document.getElementById('onsiteForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const release = document.getElementById('modal-release').value.trim().toUpperCase();
+    const newEntry = {
+        release,
+        shippingline: document.getElementById('modal-shippingline').value.trim().toUpperCase(),
+        iso: document.getElementById('modal-iso').value.trim().toUpperCase(),
+        grade: document.getElementById('modal-grade').value.trim().toUpperCase(),
+        carrier: document.getElementById('modal-carrier').value.trim().toUpperCase(),
+        rego: document.getElementById('modal-rego').value.trim().toUpperCase(),
+        door_direction: document.getElementById('modal-doorDirection').value.trim().toUpperCase(),
+        container_number: '',
+        note: document.getElementById('modal-note').value.trim() || null
+    };
 
-        await supabaseClient.from('onsite').insert(newEntry);
+    // Optimistically add to onsite table
+    const tempId = Date.now(); // temporary ID
+    const optimisticEntry = { ...newEntry, id: tempId };
+    const currentOnsiteData = window.currentOnsiteData || []; // cache
+    window.currentOnsiteData = [optimisticEntry, ...currentOnsiteData];
+    renderOnsiteTable(window.currentOnsiteData);
 
-        await supabaseClient.from('movements').insert({
-            carrier: newEntry.carrier,
-            rego: newEntry.rego,
-            shippingline: newEntry.shippingline,
-            iso: newEntry.iso,
-            grade: newEntry.grade,
-            container_number: '',
-            direction: 'outwards'
-        });
+    // Save to Supabase
+    const { data, error } = await supabaseClient.from('onsite').insert(newEntry).select().single();
 
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
-        const { data: match } = await supabaseClient.from('bookings')
-            .select('id')
-            .eq('release', release)
-            .eq('date', today)
-            .eq('completed', false)
-            .limit(1);
+    if (error) {
+        alert('Failed to save. Please try again.');
+        // Remove optimistic entry
+        window.currentOnsiteData = currentOnsiteData.filter(e => e.id !== tempId);
+        renderOnsiteTable(window.currentOnsiteData);
+        return;
+    }
 
-        if (match && match.length > 0) {
-            await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
-        }
+    // Replace temp entry with real one
+    window.currentOnsiteData = window.currentOnsiteData.map(e => e.id === tempId ? data : e);
+    renderOnsiteTable(window.currentOnsiteData);
 
-        e.target.reset();
-        loadOnsite();
-        loadBookings();
+    // Add to movements
+    await supabaseClient.from('movements').insert({
+        carrier: newEntry.carrier,
+        rego: newEntry.rego,
+        shippingline: newEntry.shippingline,
+        iso: newEntry.iso,
+        grade: newEntry.grade,
+        container_number: '',
+        direction: 'outwards'
     });
+
+    // Mark booking completed
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Pacific/Auckland' });
+    const { data: match } = await supabaseClient.from('bookings')
+        .select('id')
+        .eq('release', release)
+        .eq('date', today)
+        .eq('completed', false)
+        .limit(1);
+
+    if (match && match.length > 0) {
+        await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
+    }
+
+    e.target.reset();
+    loadBookings(); // refresh bookings
+});
 
     // Full app logic
     async function initApp(role = 'dispatch') {
@@ -558,9 +579,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderOnsiteTable(data || []);
         }
 
-        async function loadHistory() {
-            const { data } = await supabaseClient.from('history').select('*').eq('completed_date', historyDate);
-            renderHistoryTable(data || []);
+        async function loadOnsite() {
+            const { data } = await supabaseClient.from('onsite').select('*');
+            window.currentOnsiteData = data || [];
+            renderOnsiteTable(window.currentOnsiteData);
         }
 
         // Driver movements
