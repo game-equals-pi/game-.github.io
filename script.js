@@ -538,6 +538,16 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             await supabaseClient.from('onsite').insert(newEntry);
 
+            await supabaseClient.from('movements').insert({
+                carrier: newEntry.carrier,
+                rego: newEntry.rego,
+                shippingline: newEntry.shippingline,
+                iso: newEntry.iso,
+                grade: newEntry.grade,
+                container_number: newEntry.container_number,
+                direction: 'outwards'
+            });
+          
             const { data: match } = await supabaseClient.from('bookings').select('id').eq('release', release).eq('date', today).eq('completed', false).limit(1);
             if (match && match.length > 0) {
                 await supabaseClient.from('bookings').update({ completed: true }).eq('id', match[0].id);
