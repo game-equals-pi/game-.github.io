@@ -136,7 +136,7 @@
         status.className = '';
 
         const { data, error } = await supabaseClient
-            .from('pickup_reports')
+            .from('movements')
             .insert({
                 container_number: container,
                 carrier: carrier,
