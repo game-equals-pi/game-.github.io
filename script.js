@@ -523,51 +523,58 @@ document.querySelectorAll('.completeBtn').forEach(btn => {
     }
 
     async function loadMovements() {
-        const { data } = await supabaseClient.from('movements').select('*').order('created_at', { ascending: false });
-        const container = document.getElementById('movements-container');
-        if (!container) return;
-        container.innerHTML = '';
-        if (data.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#666;">No movements yet.</p>';
-            return;
-        }
-        data.forEach(entry => {
-            const div = document.createElement('div');
-            div.classList.add('movement-entry', entry.direction);
-            let infoHTML = '';
-            if (entry.direction === 'inwards') {
-                infoHTML = `
-                    <div class="movement-info">
-                        <p><strong>Carrier:</strong> ${entry.carrier || 'N/A'}</p>
-                        <p><strong>Rego:</strong> ${entry.rego || 'N/A'}</p>
-                        <p><strong>Container Number:</strong> ${entry.container_number || 'N/A'}</p>
-                    </div>
-                    <button class="complete-btn" data-id="${entry.id}">Complete</button>
-                `;
-            } else {
-                infoHTML = `
-                    <div class="movement-info">
-                        <p><strong>Carrier:</strong> ${entry.carrier || 'N/A'}</p>
-                        <p><strong>Rego:</strong> ${entry.rego || 'N/A'}</p>
-                        <p><strong>Shipping Line:</strong> ${entry.shippingline || 'N/A'}</p>
-                        <p><strong>ISO:</strong> ${entry.iso || 'N/A'}</p>
-                        <p><strong>Grade:</strong> ${entry.grade || 'N/A'}</p>
-                        <p><strong>Container Number:</strong> ${entry.container_number || 'N/A'}</p>
-                    </div>
-                    <button class="complete-btn" data-id="${entry.id}">Complete</button>
-                `;
-            }
-            div.innerHTML = infoHTML;
-            container.appendChild(div);
-        });
-        document.querySelectorAll('.complete-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.dataset.id;
-                await supabaseClient.from('movements').delete().eq('id', id);
-                loadMovements();
-            });
-        });
+    const { data } = await supabaseClient.from('movements').select('*').order('created_at', { ascending: false });
+
+    const container = document.getElementById('movements-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (data.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666;">No movements yet.</p>';
+        return;
     }
+
+    data.forEach(entry => {
+        const div = document.createElement('div');
+        div.classList.add('movement-entry', entry.direction);
+
+        let infoHTML = '';
+        if (entry.direction === 'inwards') {
+            infoHTML = `
+                <div class="movement-info">
+                    <p><strong>Carrier:</strong> ${entry.carrier || 'N/A'}</p>
+                    <p><strong>Rego:</strong> ${entry.rego || 'N/A'}</p>
+                    <p><strong>Container Number:</strong> ${entry.container_number || 'N/A'}</p>
+                </div>
+                <button class="complete-btn" data-id="${entry.id}">Complete</button>
+            `;
+        } else { // outwards
+            infoHTML = `
+                <div class="movement-info">
+                    <p><strong>Carrier:</strong> ${entry.carrier || 'N/A'}</p>
+                    <p><strong>Rego:</strong> ${entry.rego || 'N/A'}</p>
+                    <p><strong>Shipping Line:</strong> ${entry.shippingline || 'N/A'}</p>
+                    <p><strong>ISO:</strong> ${entry.iso || 'N/A'}</p>
+                    <p><strong>Grade:</strong> ${entry.grade || 'N/A'}</p>
+                </div>
+                <!-- No complete button for outwards -->
+            `;
+        }
+
+        div.innerHTML = infoHTML;
+        container.appendChild(div);
+    });
+
+    // Only inwards have complete buttons
+    document.querySelectorAll('.complete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            await supabaseClient.from('movements').delete().eq('id', id);
+            loadMovements();
+        });
+    });
+}
 
     async function initApp(role = 'dispatch') {
         const todayFull = new Date().toLocaleDateString('en-US', {
