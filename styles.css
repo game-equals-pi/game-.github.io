@@ -293,3 +293,59 @@ tr:hover {
     color: white;
     font-weight: bold;
 }
+/* Driver Movements - Messenger Style */
+#movements-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.movement-entry {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background: white;
+    position: relative;
+}
+
+.movement-entry.inwards {
+    background: #e3f2fd; /* Light blue for inwards */
+}
+
+.movement-entry.outwards {
+    background: #e6ffe6; /* Light green for outwards */
+}
+
+.movement-info {
+    flex: 1;
+}
+
+.movement-info p {
+    margin: 5px 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.movement-info p strong {
+    color: #007bff;
+}
+
+.complete-btn {
+    padding: 8px 16px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-left: 15px;
+}
+
+.complete-btn:hover {
+    background: #218838;
+}
