@@ -110,7 +110,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // Create Supabase client only once
     const { createClient } = supabase;
     const supabaseClient = createClient(
       'https://xoxbmcfsawwibxdegznv.supabase.co',
@@ -123,7 +122,7 @@
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const container = document.getElementById('container').value.trim().toUpperCase();
+        const container = DOCUMENT.getElementById('container').value.trim().toUpperCase();
         const carrier = document.getElementById('carrier').value.trim() || null;
         const rego = document.getElementById('rego').value.trim() || null;
 
@@ -136,11 +135,11 @@
         status.className = '';
 
         const { data, error } = await supabaseClient
-            .from('movements')
+            .from('pickup_reports')
             .insert({
                 container_number: container,
                 carrier: carrier,
-                rego: rego
+                rego: rego,  // ← Comma was missing here
                 direction: 'inwards'
             });
 
