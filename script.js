@@ -255,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add to movements
     await supabaseClient.from('movements').insert({
+        release: newEntry.release,  // ← Add this line
         carrier: newEntry.carrier,
         rego: newEntry.rego,
         shippingline: newEntry.shippingline,
